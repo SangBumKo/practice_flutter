@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:practice_flutter/screens/search_group_page/SearchGroupPage.dart';
 import '../create_group_page/CreateGroupPage.dart';
 import 'package:practice_flutter/models/GroupModel.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -14,23 +15,38 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   final isSelected = <bool>[false, false];
   final f = FirebaseFirestore.instance;
+  final _auth = FirebaseAuth.instance;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Do You Like?'),
-        backgroundColor: Color(0xFF86D58E),
+        backgroundColor: const Color(0xFF86D58E),
       ),
-      body: Stack(
-        children: [
-          viewGroupsStreamBuilder(),
-          Positioned(
-            child: searchOrCreateGroupButton(),
-            bottom: 20,
-            right: 20,
-          ),
-        ],
+      body: StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+        stream: f.collection('USERS').doc(_auth.currentUser!.uid).snapshots(),
+        builder: (context, snapshot) {
+          if (snapshot.hasData) {
+            bool isJoinedGroup = snapshot.data!.get('joinedGroupName') != '';
+            if (isJoinedGroup) {
+              return Center(child: Text('Working!'));
+            }
+            return Stack(
+              children: [
+                viewGroupsStreamBuilder(),
+                Positioned(
+                  child: searchOrCreateGroupButton(),
+                  bottom: 20,
+                  right: 20,
+                ),
+              ],
+            );
+          }
+          return const Center(
+            child: CircularProgressIndicator(),
+          );
+        },
       ),
     );
   }

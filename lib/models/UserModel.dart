@@ -5,20 +5,24 @@ class UserModel{
 
   //input
   String? name;
+  String? password;
   String? major;
-  String? entranceYear;
+  int? entranceYear;
   String? gender;
   String? email;
 
-  UserModel({this.pk, this.name, this.major, this.entranceYear, this.gender});
+  UserModel({this.pk, this.password, this.name, this.major, this.entranceYear, this.gender, this.email, this.joinedGroupName});
 
   Map<String, dynamic> toJson() {
     return <String, dynamic>{
       'pk' : pk,
       'name': name,
+      'password' : password,
       'major' : major,
       'entranceYear' : entranceYear,
       'gender' : gender,
+      'email' : email,
+      'joinedGroupName' : joinedGroupName,
     };
   }
 }

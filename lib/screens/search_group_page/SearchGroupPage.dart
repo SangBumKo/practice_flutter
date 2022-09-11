@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firestore_search/firestore_search.dart';
 import 'package:practice_flutter/models/GroupModel.dart';
+import 'package:flutter_swipe_action_cell/flutter_swipe_action_cell.dart';
 
 class SearchGroupPage extends StatefulWidget {
   const SearchGroupPage({Key? key}) : super(key: key);
@@ -46,36 +47,37 @@ class _SearchGroupPageState extends State<SearchGroupPage> {
                 final List<GroupModel>? groupList = snapshot.data;
                 if (groupList!.isEmpty) {
                   return const Center(
-                    child: Text('잘못 찾았어요~'),
+                    child: Text('검색결과가 없어요 ㅠㅠ'),
                   );
                 }
                 return ListView.builder(
-                    shrinkWrap: true,
-                    itemCount: groupList.length,
-                    itemBuilder: (context, index) {
-                      final GroupModel data = groupList[index];
+                      shrinkWrap: true,
+                      itemCount: groupList.length,
+                      itemBuilder: (context, index) {
+                        final GroupModel data = groupList[index];
 
-                      return Column(
-                        mainAxisSize: MainAxisSize.min,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: Text(
-                              '${data.name}',
-                              style: Theme.of(context).textTheme.headline6,
+                        return Column(
+                          mainAxisSize: MainAxisSize.min,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: Text(
+                                '${data.name}',
+                                style: Theme.of(context).textTheme.headline6,
+                              ),
                             ),
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.only(
-                                bottom: 8.0, left: 8.0, right: 8.0),
-                            child: Text('${data.leader}',
-                                style: Theme.of(context).textTheme.bodyText1),
-                          )
-                        ],
-                      );
-                    });
+                            Padding(
+                              padding: const EdgeInsets.only(
+                                  bottom: 8.0, left: 8.0, right: 8.0),
+                              child: Text('${data.leader}',
+                                  style: Theme.of(context).textTheme.bodyText1),
+                            )
+                          ],
+                        );
+                      }
+                );
               }
 
               if (snapshot.connectionState == ConnectionState.done) {

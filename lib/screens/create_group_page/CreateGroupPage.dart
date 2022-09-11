@@ -1,6 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:practice_flutter/models/GroupModel.dart';
+import 'package:animated_custom_dropdown/custom_dropdown.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class CreateGroupPage extends StatefulWidget {
   const CreateGroupPage({Key? key}) : super(key: key);
@@ -11,9 +13,10 @@ class CreateGroupPage extends StatefulWidget {
 
 class _CreateGroupPageState extends State<CreateGroupPage> {
   final f = FirebaseFirestore.instance;
+  final _auth = FirebaseAuth.instance;
   final _formKey = GlobalKey<FormState>();
-  final _capacityList = [1, 2, 3, 4];
-  int _selectedValue = 1;
+  final List<String>_capacityList = ['1', '2', '3', '4'];
+  final TextEditingController _capacityInputController = TextEditingController();
   final _groupNameTextEditController = TextEditingController();
 
   @override
@@ -54,19 +57,11 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
               ),
             ),
           ),
-          DropdownButton<int>(
-              value: _selectedValue,
-              items: _capacityList
-                  .map((value) => DropdownMenuItem(
-                        value: value,
-                        child: Text(value.toString()),
-                      ))
-                  .toList(),
-              onChanged: (value) {
-                setState(() {
-                  _selectedValue = value!;
-                });
-              }),
+          CustomDropdown(
+            hintText: '최대 인원을 선택해주세요!',
+            items: _capacityList,
+            controller: _capacityInputController,
+          ),
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 16.0),
             child: ElevatedButton(
@@ -94,9 +89,10 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
     await f.collection('GROUPS').doc(_groupNameTextEditController.text).set(
         GroupModel(
             name: _groupNameTextEditController.text,
-            capacity: _selectedValue,
-            leader: '1000',
-            memberIdList: ['1000']).toJson());
+            capacity: int.parse(_capacityInputController.text),
+            leader: _auth.currentUser!.uid,
+            memberIdList: [_auth.currentUser!.uid]).toJson());
+    await f.collection('USERS').doc(_auth.currentUser!.uid).update({'joinedGroupName' : _groupNameTextEditController.text});
   }
 
   Widget groupNameCheckButton(String str) {
@@ -111,7 +107,7 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
   //이걸 그냥 중복확인 버튼에 심자
   Future<bool> isGroupNameOccupied(String str) async {
     var _groupName =
-        await f.collection('GROUPS').where('name', isEqualTo: str).get();
+    await f.collection('GROUPS').where('name', isEqualTo: str).get();
     if (_groupName.size > 0) return true;
     return false;
   }
