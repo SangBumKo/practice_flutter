@@ -22,9 +22,13 @@ class _SearchGroupPageState extends State<SearchGroupPage> {
       children: [
         Row(
           children: [
-            const Expanded(child: Padding(
+            const Expanded(
+                child: Padding(
               padding: EdgeInsets.only(left: 20),
-              child: Text('방 검색하기', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),),
+              child: Text(
+                '방 검색하기',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
             )),
             IconButton(
               icon: const Icon(
@@ -55,59 +59,74 @@ class _SearchGroupPageState extends State<SearchGroupPage> {
                   );
                 }
                 return ListView.builder(
-                      shrinkWrap: true,
-                      itemCount: groupList.length,
-                      itemBuilder: (context, index) {
-                        final GroupModel data = groupList[index];
+                    shrinkWrap: true,
+                    itemCount: groupList.length,
+                    itemBuilder: (context, index) {
+                      final GroupModel data = groupList[index];
 
-                        return Container(
-                          decoration: BoxDecoration(border: Border.all()),
-                          child: Row(
-                            children: [
-                              Expanded(
-                                flex: 9,
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Padding(
-                                      padding: const EdgeInsets.all(8.0),
-                                      child: Text(
-                                        '${data.name}',
-                                        style: Theme.of(context).textTheme.headline6,
-                                      ),
+                      return Container(
+                        decoration: BoxDecoration(border: Border.all()),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              flex: 9,
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Padding(
+                                    padding: const EdgeInsets.all(8.0),
+                                    child: Text(
+                                      '${data.name}',
+                                      style:
+                                          Theme.of(context).textTheme.headline6,
                                     ),
-                                    Padding(
-                                      padding: const EdgeInsets.only(
-                                          bottom: 8.0, left: 8.0, right: 8.0),
-                                      child: Text('${data.leader}',
-                                          style: Theme.of(context).textTheme.bodyText1),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              Expanded(
-                                flex: 1,
-                                child: Padding(
-                                  padding: const EdgeInsets.all(8.0),
-                                  child: OutlinedButton(
-                                    child: Text('Join!'),
-                                    onPressed: ()async{
-                                      await f.collection('USERS').doc(_auth.currentUser!.uid).update({'joinedGroupName' : data.name});
-                                      GroupModel _group = GroupModel.fromSnapshot(await f.collection('GROUPS').doc(data.name).get());
-                                      _group.memberIdList.add(_auth.currentUser!.uid);
-                                      await f.collection('GROUPS').doc(data.name).update({'memberIdList' : _group.memberIdList});
-                                      Navigator.pop(context);
-                                    },
                                   ),
+                                  Padding(
+                                    padding: const EdgeInsets.only(
+                                        bottom: 8.0, left: 8.0, right: 8.0),
+                                    child: Text('${data.leader}',
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodyText1),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Expanded(
+                              flex: 1,
+                              child: Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: OutlinedButton(
+                                  child: Text('Join!'),
+                                  onPressed: () async {
+                                    await f
+                                        .collection('USERS')
+                                        .doc(_auth.currentUser!.uid)
+                                        .update({'joinedGroupName': data.name});
+                                    GroupModel _group = GroupModel.fromSnapshot(
+                                        await f
+                                            .collection('GROUPS')
+                                            .doc(data.name)
+                                            .get());
+                                    _group.memberIdList
+                                        .add(_auth.currentUser!.uid);
+                                    await f
+                                        .collection('GROUPS')
+                                        .doc(data.name)
+                                        .update({
+                                      'memberIdList': _group.memberIdList
+                                    });
+                                    Navigator.pop(context);
+                                  },
                                 ),
                               ),
-                            ],
-                          ),
-                        );
-                      }
-                );
+                            ),
+                          ],
+                        ),
+                      );
+                    });
               }
 
               if (snapshot.connectionState == ConnectionState.done) {

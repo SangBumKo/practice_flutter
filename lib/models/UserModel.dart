@@ -29,6 +29,11 @@ class UserModel{
   UserModel.fromSnapshot(DocumentSnapshot<Map<String, dynamic>> snapshot)
       : this.fromJson(snapshot.data()!);
 
+  Future<String> getGender(String userId) async{
+    var _userData = await FirebaseFirestore.instance.collection('USERS').doc(userId).get();
+    UserModel _user = UserModel.fromSnapshot(_userData);
+    return _user.gender!;
+  }
 
   Map<String, dynamic> toJson() {
     return <String, dynamic>{

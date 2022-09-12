@@ -33,33 +33,8 @@ class _HomePageState extends State<HomePage> {
             if (isJoinedGroup) {
               return Center(
                   child: OutlinedButton(
-                  child: Text('그룹 나가기'),
-                  //리더가 그룹을 나가면 그룹이 사라집니다, 그래도 나가시겠습니까?
-                  onPressed: () async {
-                    DocumentSnapshot<Map<String, dynamic>> joinedGroup = await f
-                        .collection('USERS')
-                        .doc(_auth.currentUser!.uid)
-                        .get();
-                    UserModel _user = UserModel.fromSnapshot(joinedGroup);
-                    GroupModel _group = GroupModel.fromSnapshot(await f
-                        .collection('GROUPS')
-                        .doc(_user.joinedGroupName)
-                        .get());
-                    await f
-                        .collection('USERS')
-                        .doc(_user.pk)
-                        .update({'joinedGroupName': ''});
-                    if(_group.leader == _user.pk){
-                      await f.collection('GROUPS').doc(_user.joinedGroupName).delete();
-                    }
-                    else{
-                      _group.memberIdList.remove(_auth.currentUser!.uid);
-                      await f
-                          .collection('GROUPS')
-                          .doc(_user.joinedGroupName)
-                          .update({'memberIdList': _group.memberIdList});
-                    }
-                },
+                child: Text('그룹 나가기'),
+                onPressed: () => exitCheckDialog(),
               ));
             }
             return Stack(
@@ -209,5 +184,79 @@ class _HomePageState extends State<HomePage> {
         ),
       ],
     );
+  }
+
+  void exitCheckDialog() {
+    showDialog(
+        context: context,
+        //barrierDismissible - Dialog를 제외한 다른 화면 터치 x
+        barrierDismissible: false,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10.0)),
+            title: Column(
+              children: <Widget>[
+                Text("정말 나가시겠습니까?"),
+              ],
+            ),
+            //
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text(
+                  "리더의 경우 그룹을 나갈시 그룹이 사라집니다.",
+                ),
+              ],
+            ),
+            actions: <Widget>[
+              TextButton(
+                child: new Text("예"),
+                onPressed: () async {
+                  DocumentSnapshot<Map<String, dynamic>> joinedGroup = await f
+                      .collection('USERS')
+                      .doc(_auth.currentUser!.uid)
+                      .get();
+                  UserModel _user = UserModel.fromSnapshot(joinedGroup);
+                  GroupModel _group = GroupModel.fromSnapshot(await f
+                      .collection('GROUPS')
+                      .doc(_user.joinedGroupName)
+                      .get());
+
+                  if (_group.leader == _user.pk) {
+                    _group.memberIdList.forEach((member) {
+                      f
+                          .collection('USERS')
+                          .doc(member)
+                          .update({'joinedGroupName': ''});
+                    });
+                    await f
+                        .collection('GROUPS')
+                        .doc(_user.joinedGroupName)
+                        .delete();
+                  } else {
+                    await f
+                        .collection('USERS')
+                        .doc(_user.pk)
+                        .update({'joinedGroupName': ''});
+                    _group.memberIdList.remove(_auth.currentUser!.uid);
+                    await f
+                        .collection('GROUPS')
+                        .doc(_user.joinedGroupName)
+                        .update({'memberIdList': _group.memberIdList});
+                  }
+                  Navigator.pop(context);
+                },
+              ),
+              TextButton(
+                child: new Text("아니요"),
+                onPressed: () {
+                  Navigator.pop(context);
+                },
+              ),
+            ],
+          );
+        });
   }
 }
