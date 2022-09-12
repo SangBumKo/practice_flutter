@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:practice_flutter/screens/search_group_page/SearchGroupPage.dart';
+import '../../models/UserModel.dart';
 import '../create_group_page/CreateGroupPage.dart';
 import 'package:practice_flutter/models/GroupModel.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -30,7 +31,36 @@ class _HomePageState extends State<HomePage> {
           if (snapshot.hasData) {
             bool isJoinedGroup = snapshot.data!.get('joinedGroupName') != '';
             if (isJoinedGroup) {
-              return Center(child: Text('Working!'));
+              return Center(
+                  child: OutlinedButton(
+                  child: Text('그룹 나가기'),
+                  //리더가 그룹을 나가면 그룹이 사라집니다, 그래도 나가시겠습니까?
+                  onPressed: () async {
+                    DocumentSnapshot<Map<String, dynamic>> joinedGroup = await f
+                        .collection('USERS')
+                        .doc(_auth.currentUser!.uid)
+                        .get();
+                    UserModel _user = UserModel.fromSnapshot(joinedGroup);
+                    GroupModel _group = GroupModel.fromSnapshot(await f
+                        .collection('GROUPS')
+                        .doc(_user.joinedGroupName)
+                        .get());
+                    await f
+                        .collection('USERS')
+                        .doc(_user.pk)
+                        .update({'joinedGroupName': ''});
+                    if(_group.leader == _user.pk){
+                      await f.collection('GROUPS').doc(_user.joinedGroupName).delete();
+                    }
+                    else{
+                      _group.memberIdList.remove(_auth.currentUser!.uid);
+                      await f
+                          .collection('GROUPS')
+                          .doc(_user.joinedGroupName)
+                          .update({'memberIdList': _group.memberIdList});
+                    }
+                },
+              ));
             }
             return Stack(
               children: [

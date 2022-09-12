@@ -38,6 +38,22 @@ class GroupModel {
   return _groupList;
   }
 
+
+  //filter 만들기
+  // List<GroupModel> groupListFromSnapshotForSearchGroupPage(QuerySnapshot querySnapshot){
+  //   List<GroupModel> _groupList = [];
+  //   querySnapshot.docs.where((queryDocumentSnapshot){
+  //     final Map<String, dynamic> queryDocumentJsonData = queryDocumentSnapshot.data() as Map<String, dynamic>;
+  //     int _capacity = queryDocumentJsonData['capacity'];
+  //     List<String> memberIdList = queryDocumentJsonData['memberIdList'];
+  //     String _leader = memberIdList[0];
+  //
+  //     bool isFull = _capacity == memberIdList.length;
+  //     return isFull;
+  //   }).forEach((element) { })
+  // }
+
+
   Map<String, dynamic> toJson() {
     return <String, dynamic>{
       'name': name,

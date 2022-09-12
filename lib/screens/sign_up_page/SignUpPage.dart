@@ -36,6 +36,7 @@ class _SignUpPageState extends State<SignUpPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        backgroundColor: const Color(0xFF86D58E),
         title: const Text('회원가입!'),
         centerTitle: true,
         elevation: 0.0,
@@ -59,8 +60,32 @@ class _SignUpPageState extends State<SignUpPage> {
                         Expanded(
                           child: TextFormField(
                             controller: _nicknameController,
-                            decoration: InputDecoration(labelText: '닉네임'),
-                            keyboardType: TextInputType.text,
+                            validator: (value) {
+                              if (value!.isEmpty) {
+                                return '닉네임을 입력하세요';
+                              }
+                              return null;
+                            },
+                            decoration: InputDecoration(
+                              hintText: '닉네임을 입력해주세요..',
+                              hintStyle: const TextStyle(
+                                color: Colors.grey,
+                              ),
+                              enabledBorder: UnderlineInputBorder(
+                                  borderRadius: BorderRadius.circular(30),
+                                  borderSide: const BorderSide(
+                                    color: Colors.grey,
+                                  )),
+                              focusedBorder: UnderlineInputBorder(
+                                  borderRadius: BorderRadius.circular(30),
+                                  borderSide: const BorderSide(
+                                    color: Colors.grey,
+                                  )),
+                              filled: true,
+                            ),
+                            style: const TextStyle(
+                              fontSize: 18,
+                            ),
                           ),
                         ),
                         SizedBox(width: 5.0),
@@ -83,9 +108,34 @@ class _SignUpPageState extends State<SignUpPage> {
                         children: [
                           Expanded(
                             child: TextFormField(
-                              controller: _emailController,
-                              decoration: InputDecoration(labelText: '이메일 입력'),
                               keyboardType: TextInputType.emailAddress,
+                              controller: _emailController,
+                              validator: (value) {
+                                if (value!.isEmpty) {
+                                  return '학교이메일을 입력하세요';
+                                }
+                                return null;
+                              },
+                              decoration: InputDecoration(
+                                hintText: '학교이메일을 입력해주세요..',
+                                hintStyle: const TextStyle(
+                                  color: Colors.grey,
+                                ),
+                                enabledBorder: UnderlineInputBorder(
+                                    borderRadius: BorderRadius.circular(30),
+                                    borderSide: const BorderSide(
+                                      color: Colors.grey,
+                                    )),
+                                focusedBorder: UnderlineInputBorder(
+                                    borderRadius: BorderRadius.circular(30),
+                                    borderSide: const BorderSide(
+                                      color: Colors.grey,
+                                    )),
+                                filled: true,
+                              ),
+                              style: const TextStyle(
+                                fontSize: 18,
+                              ),
                             ),
                           ),
                           const SizedBox(width: 5.0),
@@ -105,8 +155,32 @@ class _SignUpPageState extends State<SignUpPage> {
                     ),
                     TextFormField(
                       controller: _passwordController,
-                      decoration: InputDecoration(labelText: '비밀번호'),
-                      keyboardType: TextInputType.text,
+                      validator: (value) {
+                        if (value!.isEmpty) {
+                          return '비밀번호를 입력하세요';
+                        }
+                        return null;
+                      },
+                      decoration: InputDecoration(
+                        hintText: '비밀번호를 입력해주세요..',
+                        hintStyle: const TextStyle(
+                          color: Colors.grey,
+                        ),
+                        enabledBorder: UnderlineInputBorder(
+                            borderRadius: BorderRadius.circular(30),
+                            borderSide: const BorderSide(
+                              color: Colors.grey,
+                            )),
+                        focusedBorder: UnderlineInputBorder(
+                            borderRadius: BorderRadius.circular(30),
+                            borderSide: const BorderSide(
+                              color: Colors.grey,
+                            )),
+                        filled: true,
+                      ),
+                      style: const TextStyle(
+                        fontSize: 18,
+                      ),
                     ),
                     const SizedBox(height: 15.0),
                     //학과

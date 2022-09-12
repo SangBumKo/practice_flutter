@@ -1,7 +1,8 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:firestore_search/firestore_search.dart';
 import 'package:practice_flutter/models/GroupModel.dart';
-import 'package:flutter_swipe_action_cell/flutter_swipe_action_cell.dart';
 
 class SearchGroupPage extends StatefulWidget {
   const SearchGroupPage({Key? key}) : super(key: key);
@@ -11,6 +12,8 @@ class SearchGroupPage extends StatefulWidget {
 }
 
 class _SearchGroupPageState extends State<SearchGroupPage> {
+  final f = FirebaseFirestore.instance;
+  final _auth = FirebaseAuth.instance;
   TextEditingController controller = TextEditingController();
 
   @override
@@ -36,6 +39,7 @@ class _SearchGroupPageState extends State<SearchGroupPage> {
           tag: 'example',
         ),
         Expanded(
+          //동성이랑, isFullx인 것들만 띄워주기
           child: FirestoreSearchResults.builder(
             tag: 'example',
             firestoreCollectionName: 'GROUPS',
@@ -56,25 +60,51 @@ class _SearchGroupPageState extends State<SearchGroupPage> {
                       itemBuilder: (context, index) {
                         final GroupModel data = groupList[index];
 
-                        return Column(
-                          mainAxisSize: MainAxisSize.min,
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Padding(
-                              padding: const EdgeInsets.all(8.0),
-                              child: Text(
-                                '${data.name}',
-                                style: Theme.of(context).textTheme.headline6,
+                        return Container(
+                          decoration: BoxDecoration(border: Border.all()),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                flex: 9,
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Padding(
+                                      padding: const EdgeInsets.all(8.0),
+                                      child: Text(
+                                        '${data.name}',
+                                        style: Theme.of(context).textTheme.headline6,
+                                      ),
+                                    ),
+                                    Padding(
+                                      padding: const EdgeInsets.only(
+                                          bottom: 8.0, left: 8.0, right: 8.0),
+                                      child: Text('${data.leader}',
+                                          style: Theme.of(context).textTheme.bodyText1),
+                                    ),
+                                  ],
+                                ),
                               ),
-                            ),
-                            Padding(
-                              padding: const EdgeInsets.only(
-                                  bottom: 8.0, left: 8.0, right: 8.0),
-                              child: Text('${data.leader}',
-                                  style: Theme.of(context).textTheme.bodyText1),
-                            )
-                          ],
+                              Expanded(
+                                flex: 1,
+                                child: Padding(
+                                  padding: const EdgeInsets.all(8.0),
+                                  child: OutlinedButton(
+                                    child: Text('Join!'),
+                                    onPressed: ()async{
+                                      await f.collection('USERS').doc(_auth.currentUser!.uid).update({'joinedGroupName' : data.name});
+                                      GroupModel _group = GroupModel.fromSnapshot(await f.collection('GROUPS').doc(data.name).get());
+                                      _group.memberIdList.add(_auth.currentUser!.uid);
+                                      await f.collection('GROUPS').doc(data.name).update({'memberIdList' : _group.memberIdList});
+                                      Navigator.pop(context);
+                                    },
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
                         );
                       }
                 );
