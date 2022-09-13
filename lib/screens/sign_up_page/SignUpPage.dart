@@ -24,10 +24,9 @@ class _SignUpPageState extends State<SignUpPage> {
     '21',
     '22',
   ];
-  final TextEditingController _genderInputController = TextEditingController();
-  final TextEditingController _majorInputController = TextEditingController();
-  final TextEditingController _entranceYearInputController =
-      TextEditingController();
+  final TextEditingController _genderController = TextEditingController();
+  final TextEditingController _majorController = TextEditingController();
+  final TextEditingController _entranceYearController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _nicknameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
@@ -36,7 +35,6 @@ class _SignUpPageState extends State<SignUpPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: const Color(0xFF86D58E),
         title: const Text('회원가입!'),
         centerTitle: true,
         elevation: 0.0,
@@ -49,191 +47,63 @@ class _SignUpPageState extends State<SignUpPage> {
           child: Column(
             children: <Widget>[
               Form(
-                child: Container(
-                  padding: EdgeInsets.fromLTRB(20, 0, 20, 0),
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
                   child: Column(children: <Widget>[
-                    SizedBox(height: 15.0),
-                    //닉네임
-                    Container(
-                        child: Row(
+                    const SizedBox(height: 15.0),
+                    Row(
                       children: [
                         Expanded(
-                          child: TextFormField(
+                          child: createCustomTextFormField(
                             controller: _nicknameController,
-                            validator: (value) {
-                              if (value!.isEmpty) {
-                                return '닉네임을 입력하세요';
-                              }
-                              return null;
-                            },
-                            decoration: InputDecoration(
-                              hintText: '닉네임을 입력해주세요..',
-                              hintStyle: const TextStyle(
-                                color: Colors.grey,
-                              ),
-                              enabledBorder: UnderlineInputBorder(
-                                  borderRadius: BorderRadius.circular(30),
-                                  borderSide: const BorderSide(
-                                    color: Colors.grey,
-                                  )),
-                              focusedBorder: UnderlineInputBorder(
-                                  borderRadius: BorderRadius.circular(30),
-                                  borderSide: const BorderSide(
-                                    color: Colors.grey,
-                                  )),
-                              filled: true,
-                            ),
-                            style: const TextStyle(
-                              fontSize: 18,
-                            ),
+                            guideText: '닉네임을 입력하세요',
                           ),
                         ),
-                        SizedBox(width: 5.0),
-                        OutlinedButton(
-                          child: Text('중복확인'),
-                          onPressed: () {},
-                          style: OutlinedButton.styleFrom(
-                              foregroundColor: Colors.green,
-                              minimumSize: Size(70, 40),
-                              side: BorderSide(
-                                color: Colors.green,
-                                width: 1.0,
-                              )),
-                        )
+                        const SizedBox(width: 5.0),
+                        createCustomOutlinedButton(
+                            childText: '중복확인', onPressed: () {}),
                       ],
-                    )),
-                    //이메일
-                    Container(
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: TextFormField(
-                              keyboardType: TextInputType.emailAddress,
+                    ),
+                    const SizedBox(height: 15.0),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: createCustomTextFormField(
                               controller: _emailController,
-                              validator: (value) {
-                                if (value!.isEmpty) {
-                                  return '학교이메일을 입력하세요';
-                                }
-                                return null;
-                              },
-                              decoration: InputDecoration(
-                                hintText: '학교이메일을 입력해주세요..',
-                                hintStyle: const TextStyle(
-                                  color: Colors.grey,
-                                ),
-                                enabledBorder: UnderlineInputBorder(
-                                    borderRadius: BorderRadius.circular(30),
-                                    borderSide: const BorderSide(
-                                      color: Colors.grey,
-                                    )),
-                                focusedBorder: UnderlineInputBorder(
-                                    borderRadius: BorderRadius.circular(30),
-                                    borderSide: const BorderSide(
-                                      color: Colors.grey,
-                                    )),
-                                filled: true,
-                              ),
-                              style: const TextStyle(
-                                fontSize: 18,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 5.0),
-                          OutlinedButton(
-                            child: const Text('인증하기'),
-                            onPressed: () {},
-                            style: OutlinedButton.styleFrom(
-                                foregroundColor: Colors.green,
-                                minimumSize: const Size(70, 40),
-                                side: const BorderSide(
-                                  color: Colors.green,
-                                  width: 1.0,
-                                )),
-                          )
-                        ],
-                      ),
-                    ),
-                    TextFormField(
-                      controller: _passwordController,
-                      validator: (value) {
-                        if (value!.isEmpty) {
-                          return '비밀번호를 입력하세요';
-                        }
-                        return null;
-                      },
-                      decoration: InputDecoration(
-                        hintText: '비밀번호를 입력해주세요..',
-                        hintStyle: const TextStyle(
-                          color: Colors.grey,
+                              guideText: '학교이메일을 입력하세요',
+                              keyboardType: TextInputType.emailAddress),
                         ),
-                        enabledBorder: UnderlineInputBorder(
-                            borderRadius: BorderRadius.circular(30),
-                            borderSide: const BorderSide(
-                              color: Colors.grey,
-                            )),
-                        focusedBorder: UnderlineInputBorder(
-                            borderRadius: BorderRadius.circular(30),
-                            borderSide: const BorderSide(
-                              color: Colors.grey,
-                            )),
-                        filled: true,
-                      ),
-                      style: const TextStyle(
-                        fontSize: 18,
-                      ),
+                        const SizedBox(width: 5.0),
+                        createCustomOutlinedButton(
+                            childText: '인증하기', onPressed: () {}),
+                      ],
                     ),
                     const SizedBox(height: 15.0),
-                    //학과
-                    CustomDropdown.search(
-                      hintText: '학과를 선택해주세요!',
-                      items: _majorList,
-                      controller: _majorInputController,
-                    ),
+                    createCustomTextFormField(
+                        controller: _passwordController,
+                        guideText: '비밀번호를 입력하세요',
+                        keyboardType: TextInputType.visiblePassword),
                     const SizedBox(height: 15.0),
-                    //성별
-                    CustomDropdown(
-                      hintText: '성별을 선택해주세요!',
-                      items: _genderList,
-                      controller: _genderInputController,
-                    ),
+                    createCustomDropdown(
+                        hintText: '학과를 선택해주세요!',
+                        items: _majorList,
+                        controller: _majorController,
+                        isSearchable: true),
                     const SizedBox(height: 15.0),
-                    //학번
-                    CustomDropdown(
-                      hintText: '학번을 선택해주세요!',
-                      items: _entranceYearList,
-                      controller: _entranceYearInputController,
-                    ),
+                    createCustomDropdown(
+                        hintText: '성별을 선택해주세요!',
+                        items: _genderList,
+                        controller: _genderController,
+                        isSearchable: false),
                     const SizedBox(height: 15.0),
-                    OutlinedButton(
-                      child: Text('회원가입'),
-                      onPressed: () async {
-                        await FirebaseAuth.instance
-                            .createUserWithEmailAndPassword(
-                                email: _emailController.text,
-                                password: _passwordController.text);
-                        await FirebaseFirestore.instance
-                            .collection('USERS')
-                            .doc(FirebaseAuth.instance.currentUser!.uid)
-                            .set(UserModel(
-                              pk: FirebaseAuth.instance.currentUser!.uid,
-                              name: _nicknameController.text,
-                              password: _passwordController.text,
-                              major: _majorInputController.text,
-                              entranceYear:
-                                  int.parse(_entranceYearInputController.text),
-                              gender: _genderInputController.text,
-                              email: _emailController.text,
-                              joinedGroupName: '',
-                            ).toJson());
-                      },
-                      style: OutlinedButton.styleFrom(
-                          foregroundColor: Colors.green,
-                          minimumSize: const Size(70, 40),
-                          side: const BorderSide(
-                            color: Colors.green,
-                            width: 1.0,
-                          )),
-                    ),
+                    createCustomDropdown(
+                        hintText: '학번을 선택해주세요!',
+                        items: _entranceYearList,
+                        controller: _entranceYearController,
+                        isSearchable: false),
+                    const SizedBox(height: 15.0),
+                    createCustomOutlinedButton(
+                        childText: '회원가입', onPressed: createUserAndUserData),
                   ]),
                 ),
               )
@@ -242,5 +112,87 @@ class _SignUpPageState extends State<SignUpPage> {
         ),
       ),
     );
+  }
+
+  CustomDropdown createCustomDropdown(
+      {required String hintText,
+      required List<String> items,
+      required TextEditingController controller,
+      required bool isSearchable}) {
+    if (isSearchable) {
+      return CustomDropdown.search(
+          hintText: hintText, items: items, controller: controller);
+    }
+    return CustomDropdown(
+        hintText: hintText, items: items, controller: controller);
+  }
+
+  TextFormField createCustomTextFormField(
+      {required TextEditingController controller,
+      required String guideText,
+      TextInputType? keyboardType}) {
+    return TextFormField(
+      keyboardType: keyboardType,
+      controller: controller,
+      validator: (value) {
+        if (value!.isEmpty) {
+          return guideText;
+        }
+        return null;
+      },
+      decoration: InputDecoration(
+        hintText: guideText,
+        hintStyle: const TextStyle(
+          color: Colors.grey,
+        ),
+        enabledBorder: UnderlineInputBorder(
+            borderRadius: BorderRadius.circular(30),
+            borderSide: const BorderSide(
+              color: Colors.grey,
+            )),
+        focusedBorder: UnderlineInputBorder(
+            borderRadius: BorderRadius.circular(30),
+            borderSide: const BorderSide(
+              color: Colors.grey,
+            )),
+        filled: true,
+      ),
+      style: const TextStyle(
+        fontSize: 18,
+      ),
+    );
+  }
+
+  OutlinedButton createCustomOutlinedButton(
+      {required String childText, VoidCallback? onPressed}) {
+    return OutlinedButton(
+      child: Text(childText),
+      onPressed: onPressed,
+      style: OutlinedButton.styleFrom(
+          foregroundColor: Colors.green,
+          minimumSize: const Size(70, 40),
+          side: const BorderSide(
+            color: Colors.green,
+            width: 1.0,
+          )),
+    );
+  }
+
+  void createUserAndUserData() async {
+    await FirebaseAuth.instance.createUserWithEmailAndPassword(
+        email: _emailController.text, password: _passwordController.text);
+
+    await FirebaseFirestore.instance
+        .collection('USERS')
+        .doc(FirebaseAuth.instance.currentUser!.uid)
+        .set(UserModel(
+          pk: FirebaseAuth.instance.currentUser!.uid,
+          name: _nicknameController.text,
+          password: _passwordController.text,
+          major: _majorController.text,
+          entranceYear: int.parse(_entranceYearController.text),
+          gender: _genderController.text,
+          email: _emailController.text,
+        ).toJson());
   }
 }

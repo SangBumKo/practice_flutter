@@ -61,7 +61,6 @@ class _HomePageState extends State<HomePage> {
         stream: f.collection('GROUPS').snapshots(),
         builder: (context, snapshot) {
           if (snapshot.hasData) {
-            //List<GroupModel>을 담고
             final List<GroupModel> _groupList = GroupModel(memberIdList: [])
                 .dataListFromSnapshots(snapshot.data!.docs);
             return GridView.builder(

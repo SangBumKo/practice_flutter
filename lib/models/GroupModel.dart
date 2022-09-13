@@ -32,31 +32,6 @@ class GroupModel {
     }).toList();
   }
 
-  List<GroupModel> getFilteredGroupListForSearchBar(
-      QuerySnapshot querySnapshot) {
-    List<GroupModel> _groupList = [];
-    querySnapshot.docs.where((queryDocumentSnapshot) {
-      final Map<String, dynamic> _queryDocumentJsonData =
-          queryDocumentSnapshot.data() as Map<String, dynamic>;
-      int _capacity = _queryDocumentJsonData['capacity'];
-      List<String> _memberIdList = _queryDocumentJsonData['memberIdList'];
-      bool _isFull = _capacity == _memberIdList.length;
-
-      String _leader = memberIdList[0];
-      String _currentUserId = FirebaseAuth.instance.currentUser!.uid;
-      Future<String> _genderOfLeader = UserModel().getGender(_leader);
-      Future<String> _genderOfCurrentUser =
-          UserModel().getGender(_currentUserId);
-      bool _isGenderMatched = _genderOfLeader == _genderOfCurrentUser;
-      return _isFull & _isGenderMatched;
-    }).forEach((filteredDocument) {
-      final Map<String, dynamic> _filteredDocumentJsonData =
-          filteredDocument.data() as Map<String, dynamic>;
-      _groupList.add(GroupModel.fromJson(_filteredDocumentJsonData));
-    });
-    return _groupList;
-  }
-
   List<GroupModel> dataListFromSnapshots(
       List<QueryDocumentSnapshot> queryDocumentSnapshots) {
     final List<GroupModel> _groupList = [];
@@ -66,6 +41,25 @@ class GroupModel {
       _groupList.add(GroupModel.fromJson(_documentInJson));
     });
     return _groupList;
+  }
+
+  bool isGroupFull(QueryDocumentSnapshot queryDocumentSnapshot){
+    int capacity = queryDocumentSnapshot.get('capacity');
+    List<dynamic> memberIdList = queryDocumentSnapshot.get('memberIdList');
+    return capacity == memberIdList.length;
+  }
+
+  List<GroupModel> getFilteredGroupListForSearchBar(
+      QuerySnapshot querySnapshot) {
+    return querySnapshot.docs.where((queryDocumentSnapshot) {
+      String leaderId = queryDocumentSnapshot.get('leader');
+      String userId = FirebaseAuth.instance.currentUser!.uid;
+
+      return (!isGroupFull(queryDocumentSnapshot) & UserModel().doesGenderMatches(leaderId, userId));
+    }).map((element){
+      final Map<String, dynamic> filteredJsonData = element.data() as Map<String, dynamic>;
+      return GroupModel.fromJson(filteredJsonData);
+    }).toList();
   }
 
   Map<String, dynamic> toJson() {

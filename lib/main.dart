@@ -19,6 +19,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      theme: ThemeData(primarySwatch: Colors.lightGreen),
       home: myHome(),
     );
   }
@@ -28,6 +29,8 @@ class MyApp extends StatelessWidget {
       stream: FirebaseAuth.instance.authStateChanges(),
       builder: (context, snapshot){
         if(snapshot.hasData){
+          //이메일 인증이 안끝났다면 email인증 창으로 다시 보내기
+          if(snapshot.data!.emailVerified){}
           return const HomePage();
         }
         return const SignUpPage();

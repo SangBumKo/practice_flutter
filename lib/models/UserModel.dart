@@ -1,11 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class UserModel{
-  //auto
+  String joinedGroupName = '';
   String? pk;
-  String? joinedGroupName;
-
-  //input
   String? name;
   String? password;
   String? major;
@@ -13,7 +10,7 @@ class UserModel{
   String? gender;
   String? email;
 
-  UserModel({this.pk, this.password, this.name, this.major, this.entranceYear, this.gender, this.email, this.joinedGroupName});
+  UserModel({this.pk, this.password, this.name, this.major, this.entranceYear, this.gender, this.email});
 
   UserModel.fromJson(Map<String, dynamic> json) {
     pk = json['pk'];
@@ -30,9 +27,12 @@ class UserModel{
       : this.fromJson(snapshot.data()!);
 
   Future<String> getGender(String userId) async{
-    var _userData = await FirebaseFirestore.instance.collection('USERS').doc(userId).get();
-    UserModel _user = UserModel.fromSnapshot(_userData);
-    return _user.gender!;
+    var userData = await FirebaseFirestore.instance.collection('USERS').doc(userId).get();
+    return userData.get('gender');
+  }
+
+  bool doesGenderMatches(String leaderId, String userId){
+    return UserModel().getGender(leaderId) == UserModel().getGender(userId);
   }
 
   Map<String, dynamic> toJson() {

@@ -51,6 +51,11 @@ class _SearchGroupPageState extends State<SearchGroupPage> {
             dataListFromSnapshot:
                 GroupModel(memberIdList: []).dataListFromSnapshot,
             builder: (context, snapshot) {
+              if(snapshot.hasError){
+                return Center(
+                  child: Text(snapshot.error.toString()),
+                );
+              }
               if (snapshot.hasData) {
                 final List<GroupModel>? groupList = snapshot.data;
                 if (groupList!.isEmpty) {
