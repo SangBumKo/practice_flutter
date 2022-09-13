@@ -12,6 +12,15 @@ class UserModel{
 
   UserModel({this.pk, this.password, this.name, this.major, this.entranceYear, this.gender, this.email});
 
+  UserModel.fromdynamic(dynamic json)
+      : pk = json['pk'],
+        name = json['name'],
+        password = json['password'],
+        major = json['major'],
+        entranceYear = int.parse(json['entranceYear']),
+        gender = json['gender'],
+        email = json['email'];
+
   UserModel.fromJson(Map<String, dynamic> json) {
     pk = json['pk'];
     name = json['name'];

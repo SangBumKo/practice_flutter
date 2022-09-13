@@ -2,11 +2,12 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'UserModel.dart';
 
+//fromJson / toJson이 문제다.
 class GroupModel {
   String? name;
   int? capacity;
   String? leader;
-  List<dynamic> memberIdList = [];
+  List<String> memberIdList = [];
 
   GroupModel(
       {this.name, this.capacity, this.leader, required this.memberIdList});
@@ -15,7 +16,7 @@ class GroupModel {
     name = json['name'];
     capacity = json['capacity'];
     leader = json['leader'];
-    memberIdList = json['memberIdList'];
+    memberIdList = (json['memberIdList'] as List).map((e) => e.toString()).toList();
   }
 
   GroupModel.fromSnapshot(DocumentSnapshot<Map<String, dynamic>> snapshot)

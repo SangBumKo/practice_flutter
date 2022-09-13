@@ -25,35 +25,33 @@ class _HomePageState extends State<HomePage> {
         title: const Text('Do You Like?'),
         backgroundColor: const Color(0xFF86D58E),
       ),
-      body: StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-        stream: f.collection('USERS').doc(_auth.currentUser!.uid).snapshots(),
-        builder: (context, snapshot) {
-          if (snapshot.hasData) {
-            bool isJoinedGroup = snapshot.data!.get('joinedGroupName') != '';
-            if (isJoinedGroup) {
-              return Center(
-                  child: OutlinedButton(
-                child: Text('그룹 나가기'),
-                onPressed: () => exitCheckDialog(),
-              ));
+      body: Stack(
+        children: [StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+          stream: f.collection('USERS').doc(_auth.currentUser!.uid).snapshots(),
+          builder: (context, snapshot) {
+            if (snapshot.hasData) {
+              bool isJoinedGroup = snapshot.data!.get('joinedGroupName') != '';
+              if (isJoinedGroup) {
+                return Center(
+                    child: OutlinedButton(
+                      child: Text('그룹 나가기'),
+                      onPressed: () => exitCheckDialog(),
+                    ));
+              }
+              return viewGroupsStreamBuilder();
             }
-            return Stack(
-              children: [
-                viewGroupsStreamBuilder(),
-                Positioned(
-                  child: searchOrCreateGroupButton(),
-                  bottom: 20,
-                  right: 20,
-                ),
-              ],
+            return const Center(
+              child: CircularProgressIndicator(),
             );
-          }
-          return const Center(
-            child: CircularProgressIndicator(),
-          );
-        },
+          },
+        ),
+        Positioned(
+          child: searchOrCreateGroupButton(),
+          bottom: 20,
+          right: 20,
+        )]
       ),
-    );
+      );
   }
 
   StreamBuilder viewGroupsStreamBuilder() {
