@@ -14,7 +14,7 @@ class SearchGroupPage extends StatefulWidget {
 }
 
 class _SearchGroupPageState extends State<SearchGroupPage> {
-  final f = FirebaseFirestore.instance;
+  final _f = FirebaseFirestore.instance;
   final _auth = FirebaseAuth.instance;
   TextEditingController controller = TextEditingController();
 
@@ -53,7 +53,7 @@ class _SearchGroupPageState extends State<SearchGroupPage> {
             dataListFromSnapshot:
                 GroupModel(memberList: []).dataListFromSnapshot,
             builder: (context, snapshot) {
-              if(snapshot.hasError){
+              if (snapshot.hasError) {
                 return Center(
                   child: Text(snapshot.error.toString()),
                 );
@@ -69,7 +69,7 @@ class _SearchGroupPageState extends State<SearchGroupPage> {
                     shrinkWrap: true,
                     itemCount: groupList.length,
                     itemBuilder: (context, index) {
-                      final GroupModel data = groupList[index];
+                      final GroupModel group = groupList[index];
 
                       return Container(
                         decoration: BoxDecoration(border: Border.all()),
@@ -85,7 +85,7 @@ class _SearchGroupPageState extends State<SearchGroupPage> {
                                   Padding(
                                     padding: const EdgeInsets.all(8.0),
                                     child: Text(
-                                      '${data.name}',
+                                      '${group.name}',
                                       style:
                                           Theme.of(context).textTheme.headline6,
                                     ),
@@ -93,7 +93,7 @@ class _SearchGroupPageState extends State<SearchGroupPage> {
                                   Padding(
                                     padding: const EdgeInsets.only(
                                         bottom: 8.0, left: 8.0, right: 8.0),
-                                    child: Text('${data.leader}',
+                                    child: Text('${group.leader!.name}',
                                         style: Theme.of(context)
                                             .textTheme
                                             .bodyText1),
@@ -109,26 +109,13 @@ class _SearchGroupPageState extends State<SearchGroupPage> {
                                   //double check!
                                   child: const Text('Join!'),
                                   onPressed: () async {
-                                    await f
-                                        .collection('USERS')
-                                        .doc(_auth.currentUser!.uid)
-                                        .update({'joinedGroupName': data.name});
-                                    GroupModel group = GroupModel.fromSnapshot(
-                                        await f
-                                            .collection('GROUPS')
-                                            .doc(data.name)
-                                            .get());
-                                    UserModel user = UserModel.fromSnapshot(
-                                      await f.collection('USERS').doc(_auth.currentUser!.uid).get()
-                                    );
-                                    group.memberList
-                                        .add(user);
-                                    await f
-                                        .collection('GROUPS')
-                                        .doc(data.name)
-                                        .update({
-                                      'memberList': group.memberList
-                                    });
+                                    var userData = await _f.collection('USERS').doc(_auth.currentUser!.uid).get();
+                                    UserModel user = UserModel.fromJson(userData.data()!);
+                                    user.joinedGroupName = group.name!;
+                                    group.memberList.add(user);
+                                    print('${group.memberList}');
+                                    await _f.collection('GROUPS').doc(group.name).update({'memberList' :  group.memberList.map((e) => e.toJson())});
+                                    await _f.collection('USERS').doc(user.pk).update({'joinedGroupName' : user.joinedGroupName});
                                     Navigator.pop(context);
                                   },
                                 ),

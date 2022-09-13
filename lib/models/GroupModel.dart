@@ -10,12 +10,12 @@ class GroupModel {
   GroupModel(
       {this.name, this.capacity, this.leader, required this.memberList});
 
-
+//얘가문제 -> convert잘되는데??
   GroupModel.fromJson(Map<String, dynamic> json) {
     name = json['name'];
     capacity = json['capacity'];
-    leader = UserModel.fromdynamic(json['leader']);
-    memberList = (json['memberList'] as List).map((e) => UserModel.fromdynamic(e)).toList();
+    leader = UserModel.fromJson(json['leader'] as Map<String, dynamic>);
+    memberList = (json['memberList'] as List).map((e) => UserModel.fromJson(e as Map<String, dynamic>)).toList();
   }
 
   GroupModel.fromSnapshot(DocumentSnapshot<Map<String, dynamic>> snapshot)

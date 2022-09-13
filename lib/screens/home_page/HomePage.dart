@@ -25,32 +25,32 @@ class _HomePageState extends State<HomePage> {
         title: const Text('Do You Like?'),
         backgroundColor: const Color(0xFF86D58E),
       ),
-      body: Stack(children: [
-        StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-          stream: f.collection('USERS').doc(_auth.currentUser!.uid).snapshots(),
-          builder: (context, snapshot) {
-            if (snapshot.hasData) {
-              bool isJoinedGroup = snapshot.data!.get('joinedGroupName') != '';
-              if (isJoinedGroup) {
-                return Center(
-                    child: OutlinedButton(
-                  child: const Text('그룹 나가기'),
-                  onPressed: () => exitCheckDialog(),
-                ));
-              }
-              return viewGroupsStreamBuilder();
+      body: StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+        stream: f.collection('USERS').doc(_auth.currentUser!.uid).snapshots(),
+        builder: (context, snapshot) {
+          if (snapshot.hasData) {
+            bool isJoinedGroup = snapshot.data!.get('joinedGroupName') != '';
+            if (isJoinedGroup) {
+              return Center(
+                  child: OutlinedButton(
+                child: const Text('그룹 나가기'),
+                onPressed: () => exitCheckDialog(),
+              ));
             }
-            return const Center(
-              child: CircularProgressIndicator(),
-            );
-          },
-        ),
-        Positioned(
-          child: searchOrCreateGroupButton(),
-          bottom: 20,
-          right: 20,
-        )
-      ]),
+            return Stack(children: [
+              viewGroupsStreamBuilder(),
+              Positioned(
+                child: searchOrCreateGroupButton(),
+                bottom: 20,
+                right: 20,
+              )
+            ]);
+          }
+          return const Center(
+            child: CircularProgressIndicator(),
+          );
+        },
+      ),
     );
   }
 
@@ -216,11 +216,11 @@ class _HomePageState extends State<HomePage> {
                       .doc(_auth.currentUser!.uid)
                       .get();
                   UserModel user = UserModel.fromSnapshot(userDocument);
+                  //Error
                   GroupModel group = GroupModel.fromSnapshot(await f
                       .collection('GROUPS')
                       .doc(user.joinedGroupName)
                       .get());
-
                   if (group.leader!.pk == user.pk) {
                     await f
                         .collection('GROUPS')
@@ -232,17 +232,18 @@ class _HomePageState extends State<HomePage> {
                           .doc(member.pk)
                           .update({'joinedGroupName': ''});
                     });
-                  } else {
-                    group.memberList.remove(user);
+                  }
+                  else {
+                    group.memberList = group.memberList.where((e) => e.pk != user.pk).toList();
                     await f
                         .collection('GROUPS')
                         .doc(user.joinedGroupName)
-                        .update({'memberList': group.memberList});
+                        .update({'memberList':  group.memberList.map((e) => e.toJson())});
+                    await f
+                        .collection('USERS')
+                        .doc(user.pk)
+                        .update({'joinedGroupName': ''});
                   }
-                  await f
-                      .collection('USERS')
-                      .doc(user.pk)
-                      .update({'joinedGroupName': ''});
                   Navigator.pop(context);
                 },
               ),
