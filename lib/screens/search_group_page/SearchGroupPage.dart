@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:firestore_search/firestore_search.dart';
 import 'package:practice_flutter/models/GroupModel.dart';
 
+import '../../models/UserModel.dart';
+
 class SearchGroupPage extends StatefulWidget {
   const SearchGroupPage({Key? key}) : super(key: key);
 
@@ -49,7 +51,7 @@ class _SearchGroupPageState extends State<SearchGroupPage> {
             firestoreCollectionName: 'GROUPS',
             searchBy: 'name',
             dataListFromSnapshot:
-                GroupModel(memberIdList: []).dataListFromSnapshot,
+                GroupModel(memberList: []).dataListFromSnapshot,
             builder: (context, snapshot) {
               if(snapshot.hasError){
                 return Center(
@@ -104,24 +106,28 @@ class _SearchGroupPageState extends State<SearchGroupPage> {
                               child: Padding(
                                 padding: const EdgeInsets.all(8.0),
                                 child: OutlinedButton(
-                                  child: Text('Join!'),
+                                  //double check!
+                                  child: const Text('Join!'),
                                   onPressed: () async {
                                     await f
                                         .collection('USERS')
                                         .doc(_auth.currentUser!.uid)
                                         .update({'joinedGroupName': data.name});
-                                    GroupModel _group = GroupModel.fromSnapshot(
+                                    GroupModel group = GroupModel.fromSnapshot(
                                         await f
                                             .collection('GROUPS')
                                             .doc(data.name)
                                             .get());
-                                    _group.memberIdList
-                                        .add(_auth.currentUser!.uid);
+                                    UserModel user = UserModel.fromSnapshot(
+                                      await f.collection('USERS').doc(_auth.currentUser!.uid).get()
+                                    );
+                                    group.memberList
+                                        .add(user);
                                     await f
                                         .collection('GROUPS')
                                         .doc(data.name)
                                         .update({
-                                      'memberIdList': _group.memberIdList
+                                      'memberList': group.memberList
                                     });
                                     Navigator.pop(context);
                                   },

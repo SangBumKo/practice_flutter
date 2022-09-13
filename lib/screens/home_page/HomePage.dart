@@ -25,8 +25,8 @@ class _HomePageState extends State<HomePage> {
         title: const Text('Do You Like?'),
         backgroundColor: const Color(0xFF86D58E),
       ),
-      body: Stack(
-        children: [StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+      body: Stack(children: [
+        StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
           stream: f.collection('USERS').doc(_auth.currentUser!.uid).snapshots(),
           builder: (context, snapshot) {
             if (snapshot.hasData) {
@@ -34,9 +34,9 @@ class _HomePageState extends State<HomePage> {
               if (isJoinedGroup) {
                 return Center(
                     child: OutlinedButton(
-                      child: Text('그룹 나가기'),
-                      onPressed: () => exitCheckDialog(),
-                    ));
+                  child: const Text('그룹 나가기'),
+                  onPressed: () => exitCheckDialog(),
+                ));
               }
               return viewGroupsStreamBuilder();
             }
@@ -49,9 +49,9 @@ class _HomePageState extends State<HomePage> {
           child: searchOrCreateGroupButton(),
           bottom: 20,
           right: 20,
-        )]
-      ),
-      );
+        )
+      ]),
+    );
   }
 
   StreamBuilder viewGroupsStreamBuilder() {
@@ -59,7 +59,7 @@ class _HomePageState extends State<HomePage> {
         stream: f.collection('GROUPS').snapshots(),
         builder: (context, snapshot) {
           if (snapshot.hasData) {
-            final List<GroupModel> _groupList = GroupModel(memberIdList: [])
+            final List<GroupModel> _groupList = GroupModel(memberList: [])
                 .dataListFromSnapshots(snapshot.data!.docs);
             return GridView.builder(
                 itemCount: _groupList.length,
@@ -84,7 +84,7 @@ class _HomePageState extends State<HomePage> {
                             height: 16.0,
                           ),
                           Expanded(
-                              child: Text(_group.leader!,
+                              child: Text(_group.leader!.name!,
                                   overflow: TextOverflow.fade)),
                         ],
                       ),
@@ -209,45 +209,45 @@ class _HomePageState extends State<HomePage> {
             ),
             actions: <Widget>[
               TextButton(
-                child: new Text("예"),
+                child: const Text("예"),
                 onPressed: () async {
-                  DocumentSnapshot<Map<String, dynamic>> joinedGroup = await f
+                  DocumentSnapshot<Map<String, dynamic>> userDocument = await f
                       .collection('USERS')
                       .doc(_auth.currentUser!.uid)
                       .get();
-                  UserModel _user = UserModel.fromSnapshot(joinedGroup);
-                  GroupModel _group = GroupModel.fromSnapshot(await f
+                  UserModel user = UserModel.fromSnapshot(userDocument);
+                  GroupModel group = GroupModel.fromSnapshot(await f
                       .collection('GROUPS')
-                      .doc(_user.joinedGroupName)
+                      .doc(user.joinedGroupName)
                       .get());
 
-                  if (_group.leader == _user.pk) {
-                    _group.memberIdList.forEach((member) {
+                  if (group.leader!.pk == user.pk) {
+                    await f
+                        .collection('GROUPS')
+                        .doc(user.joinedGroupName)
+                        .delete();
+                    group.memberList.forEach((member) {
                       f
                           .collection('USERS')
-                          .doc(member)
+                          .doc(member.pk)
                           .update({'joinedGroupName': ''});
                     });
-                    await f
-                        .collection('GROUPS')
-                        .doc(_user.joinedGroupName)
-                        .delete();
                   } else {
-                    await f
-                        .collection('USERS')
-                        .doc(_user.pk)
-                        .update({'joinedGroupName': ''});
-                    _group.memberIdList.remove(_auth.currentUser!.uid);
+                    group.memberList.remove(user);
                     await f
                         .collection('GROUPS')
-                        .doc(_user.joinedGroupName)
-                        .update({'memberIdList': _group.memberIdList});
+                        .doc(user.joinedGroupName)
+                        .update({'memberList': group.memberList});
                   }
+                  await f
+                      .collection('USERS')
+                      .doc(user.pk)
+                      .update({'joinedGroupName': ''});
                   Navigator.pop(context);
                 },
               ),
               TextButton(
-                child: new Text("아니요"),
+                child: const Text("아니요"),
                 onPressed: () {
                   Navigator.pop(context);
                 },

@@ -1,22 +1,21 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'UserModel.dart';
 
-//fromJson / toJson이 문제다.
 class GroupModel {
   String? name;
   int? capacity;
-  String? leader;
-  List<String> memberIdList = [];
+  UserModel? leader;
+  List<UserModel> memberList = [];
 
   GroupModel(
-      {this.name, this.capacity, this.leader, required this.memberIdList});
+      {this.name, this.capacity, this.leader, required this.memberList});
+
 
   GroupModel.fromJson(Map<String, dynamic> json) {
     name = json['name'];
     capacity = json['capacity'];
-    leader = json['leader'];
-    memberIdList = (json['memberIdList'] as List).map((e) => e.toString()).toList();
+    leader = UserModel.fromdynamic(json['leader']);
+    memberList = (json['memberList'] as List).map((e) => UserModel.fromdynamic(e)).toList();
   }
 
   GroupModel.fromSnapshot(DocumentSnapshot<Map<String, dynamic>> snapshot)
@@ -35,13 +34,13 @@ class GroupModel {
 
   List<GroupModel> dataListFromSnapshots(
       List<QueryDocumentSnapshot> queryDocumentSnapshots) {
-    final List<GroupModel> _groupList = [];
+    final List<GroupModel> groupList = [];
     queryDocumentSnapshots.forEach((queryDocumentSnapshot) {
-      final Map<String, dynamic> _documentInJson =
+      final Map<String, dynamic> documentInJson =
           queryDocumentSnapshot.data() as Map<String, dynamic>;
-      _groupList.add(GroupModel.fromJson(_documentInJson));
+      groupList.add(GroupModel.fromJson(documentInJson));
     });
-    return _groupList;
+    return groupList;
   }
 
   bool isGroupFull(QueryDocumentSnapshot queryDocumentSnapshot){
@@ -50,25 +49,25 @@ class GroupModel {
     return capacity == memberIdList.length;
   }
 
-  List<GroupModel> getFilteredGroupListForSearchBar(
-      QuerySnapshot querySnapshot) {
-    return querySnapshot.docs.where((queryDocumentSnapshot) {
-      String leaderId = queryDocumentSnapshot.get('leader');
-      String userId = FirebaseAuth.instance.currentUser!.uid;
-
-      return (!isGroupFull(queryDocumentSnapshot) & UserModel().doesGenderMatches(leaderId, userId));
-    }).map((element){
-      final Map<String, dynamic> filteredJsonData = element.data() as Map<String, dynamic>;
-      return GroupModel.fromJson(filteredJsonData);
-    }).toList();
-  }
+  // List<GroupModel> getFilteredGroupListForSearchBar(
+  //     QuerySnapshot querySnapshot) {
+  //   return querySnapshot.docs.where((queryDocumentSnapshot) {
+  //     String leaderId = queryDocumentSnapshot.get('leader');
+  //     String userId = FirebaseAuth.instance.currentUser!.uid;
+  //
+  //     return (!isGroupFull(queryDocumentSnapshot) & UserModel().doesGenderMatches(leaderId, userId));
+  //   }).map((element){
+  //     final Map<String, dynamic> filteredJsonData = element.data() as Map<String, dynamic>;
+  //     return GroupModel.fromJson(filteredJsonData);
+  //   }).toList();
+  // }
 
   Map<String, dynamic> toJson() {
     return <String, dynamic>{
       'name': name,
       'capacity': capacity,
-      'leader': leader,
-      'memberIdList': memberIdList,
+      'leader': leader!.toJson(),
+      'memberList': memberList.map((e) => e.toJson()),
     };
   }
 }

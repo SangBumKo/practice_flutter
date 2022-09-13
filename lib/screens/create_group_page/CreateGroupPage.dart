@@ -4,6 +4,8 @@ import 'package:practice_flutter/models/GroupModel.dart';
 import 'package:animated_custom_dropdown/custom_dropdown.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
+import '../../models/UserModel.dart';
+
 class CreateGroupPage extends StatefulWidget {
   const CreateGroupPage({Key? key}) : super(key: key);
 
@@ -86,13 +88,16 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
   }
 
   Future createGroup() async {
+    final userDocument = await f.collection('USERS').doc(_auth.currentUser!.uid).get();
+    final user = UserModel.fromSnapshot(userDocument);
+    user.joinedGroupName = _groupNameTextEditController.text;
+    await f.collection('USERS').doc(user.pk).update({'joinedGroupName' : user.joinedGroupName});
     await f.collection('GROUPS').doc(_groupNameTextEditController.text).set(
         GroupModel(
             name: _groupNameTextEditController.text,
             capacity: int.parse(_capacityInputController.text),
-            leader: _auth.currentUser!.uid,
-            memberIdList: [_auth.currentUser!.uid]).toJson());
-    await f.collection('USERS').doc(_auth.currentUser!.uid).update({'joinedGroupName' : _groupNameTextEditController.text});
+            leader: user,
+            memberList: [user]).toJson());
   }
 
   Widget groupNameCheckButton(String str) {

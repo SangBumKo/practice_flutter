@@ -11,15 +11,15 @@ class UserModel{
   String? email;
 
   UserModel({this.pk, this.password, this.name, this.major, this.entranceYear, this.gender, this.email});
-
   UserModel.fromdynamic(dynamic json)
       : pk = json['pk'],
         name = json['name'],
         password = json['password'],
         major = json['major'],
-        entranceYear = int.parse(json['entranceYear']),
+        entranceYear = json['entranceYear'],
         gender = json['gender'],
-        email = json['email'];
+        email = json['email'],
+        joinedGroupName = json['joinedGroupName'];
 
   UserModel.fromJson(Map<String, dynamic> json) {
     pk = json['pk'];
@@ -31,7 +31,9 @@ class UserModel{
     email = json['email'];
     joinedGroupName = json['joinedGroupName'];
   }
+  UserModel.test(Map<String, dynamic> json){
 
+  }
   UserModel.fromSnapshot(DocumentSnapshot<Map<String, dynamic>> snapshot)
       : this.fromJson(snapshot.data()!);
 
