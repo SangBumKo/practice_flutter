@@ -14,7 +14,7 @@ class SearchGroupPage extends StatefulWidget {
 }
 
 class _SearchGroupPageState extends State<SearchGroupPage> {
-  final _f = FirebaseFirestore.instance;
+  final f = FirebaseFirestore.instance;
   final _auth = FirebaseAuth.instance;
   TextEditingController controller = TextEditingController();
 
@@ -53,7 +53,7 @@ class _SearchGroupPageState extends State<SearchGroupPage> {
             dataListFromSnapshot:
                 GroupModel(memberList: []).dataListFromSnapshot,
             builder: (context, snapshot) {
-              if (snapshot.hasError) {
+              if(snapshot.hasError){
                 return Center(
                   child: Text(snapshot.error.toString()),
                 );
@@ -76,7 +76,7 @@ class _SearchGroupPageState extends State<SearchGroupPage> {
                         child: Row(
                           children: [
                             Expanded(
-                              flex: 9,
+                              flex: 7,
                               child: Column(
                                 mainAxisSize: MainAxisSize.min,
                                 mainAxisAlignment: MainAxisAlignment.center,
@@ -87,7 +87,7 @@ class _SearchGroupPageState extends State<SearchGroupPage> {
                                     child: Text(
                                       '${group.name}',
                                       style:
-                                          Theme.of(context).textTheme.headline6,
+                                          Theme.of(context).textTheme.titleLarge,
                                     ),
                                   ),
                                   Padding(
@@ -96,26 +96,35 @@ class _SearchGroupPageState extends State<SearchGroupPage> {
                                     child: Text('${group.leader!.name}',
                                         style: Theme.of(context)
                                             .textTheme
-                                            .bodyText1),
+                                            .bodyLarge),
                                   ),
                                 ],
                               ),
                             ),
                             Expanded(
-                              flex: 1,
+                              flex: 3,
                               child: Padding(
                                 padding: const EdgeInsets.all(8.0),
                                 child: OutlinedButton(
                                   //double check!
                                   child: const Text('Join!'),
                                   onPressed: () async {
-                                    var userData = await _f.collection('USERS').doc(_auth.currentUser!.uid).get();
-                                    UserModel user = UserModel.fromJson(userData.data()!);
+                                    UserModel user = UserModel.fromSnapshot(
+                                        await f.collection('USERS').doc(_auth.currentUser!.uid).get()
+                                    );
                                     user.joinedGroupName = group.name!;
-                                    group.memberList.add(user);
-                                    print('${group.memberList}');
-                                    await _f.collection('GROUPS').doc(group.name).update({'memberList' :  group.memberList.map((e) => e.toJson())});
-                                    await _f.collection('USERS').doc(user.pk).update({'joinedGroupName' : user.joinedGroupName});
+                                    await f
+                                        .collection('USERS')
+                                        .doc(user.pk)
+                                        .update({'joinedGroupName': user.joinedGroupName});
+                                    group.memberList
+                                        .add(user);
+                                    await f
+                                        .collection('GROUPS')
+                                        .doc(group.name)
+                                        .update({
+                                      'memberList': group.memberList.map((e) => e.toJson()).toList()
+                                    });
                                     Navigator.pop(context);
                                   },
                                 ),
