@@ -54,6 +54,7 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  //여기에 필터거는 건 쉬울듯? getGender안해도 괜찮음! -> joinedGroupName가져와야되네...
   StreamBuilder viewGroupsStreamBuilder() {
     return StreamBuilder<QuerySnapshot>(
         stream: f.collection('GROUPS').snapshots(),
@@ -244,8 +245,9 @@ class _HomePageState extends State<HomePage> {
                         .collection('USERS')
                         .doc(user.pk)
                         .update({'joinedGroupName': ''});
-                    Navigator.pop(context);
                   }
+
+                  Navigator.pop(context);
                 }),
               TextButton(
                 child: const Text("아니요"),

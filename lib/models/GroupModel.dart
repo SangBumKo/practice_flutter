@@ -32,7 +32,7 @@ class GroupModel {
     }).toList();
   }
 
-  List<GroupModel> dataListFromSnapshots(
+  List<GroupModel> dataListFromSnapshots (
       List<QueryDocumentSnapshot> queryDocumentSnapshots) {
     final List<GroupModel> groupList = [];
     queryDocumentSnapshots.forEach((queryDocumentSnapshot) {
@@ -43,31 +43,17 @@ class GroupModel {
     return groupList;
   }
 
-  bool isGroupFull(QueryDocumentSnapshot queryDocumentSnapshot){
-    int capacity = queryDocumentSnapshot.get('capacity');
-    List<dynamic> memberIdList = queryDocumentSnapshot.get('memberIdList');
-    return capacity == memberIdList.length;
+  Future<bool> isGenderSameWithCurrentUser(String currentUserId) async{
+     String genderOfCurrentUser = await UserModel().getGender(currentUserId);
+     return (genderOfCurrentUser == leader!.gender);
   }
-
-  // List<GroupModel> getFilteredGroupListForSearchBar(
-  //     QuerySnapshot querySnapshot) {
-  //   return querySnapshot.docs.where((queryDocumentSnapshot) {
-  //     String leaderId = queryDocumentSnapshot.get('leader');
-  //     String userId = FirebaseAuth.instance.currentUser!.uid;
-  //
-  //     return (!isGroupFull(queryDocumentSnapshot) & UserModel().doesGenderMatches(leaderId, userId));
-  //   }).map((element){
-  //     final Map<String, dynamic> filteredJsonData = element.data() as Map<String, dynamic>;
-  //     return GroupModel.fromJson(filteredJsonData);
-  //   }).toList();
-  // }
 
   Map<String, dynamic> toJson() {
     return <String, dynamic>{
       'name': name,
       'capacity': capacity,
       'leader': leader!.toJson(),
-      'memberList': memberList.map((e) => e.toJson()),
+      'memberList': memberList.map((e) => e.toJson()).toList(),
     };
   }
 }

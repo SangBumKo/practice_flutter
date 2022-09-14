@@ -31,19 +31,12 @@ class UserModel{
     email = json['email'];
     joinedGroupName = json['joinedGroupName'];
   }
-  UserModel.test(Map<String, dynamic> json){
-
-  }
   UserModel.fromSnapshot(DocumentSnapshot<Map<String, dynamic>> snapshot)
       : this.fromJson(snapshot.data()!);
 
   Future<String> getGender(String userId) async{
     var userData = await FirebaseFirestore.instance.collection('USERS').doc(userId).get();
     return userData.get('gender');
-  }
-
-  bool doesGenderMatches(String leaderId, String userId){
-    return UserModel().getGender(leaderId) == UserModel().getGender(userId);
   }
 
   Map<String, dynamic> toJson() {

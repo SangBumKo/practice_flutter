@@ -109,7 +109,6 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
     );
   }
 
-  //이걸 그냥 중복확인 버튼에 심자
   Future<bool> isGroupNameOccupied(String str) async {
     var _groupName =
     await f.collection('GROUPS').where('name', isEqualTo: str).get();

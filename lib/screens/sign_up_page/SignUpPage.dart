@@ -181,7 +181,6 @@ class _SignUpPageState extends State<SignUpPage> {
   void createUserAndUserData() async {
     await FirebaseAuth.instance.createUserWithEmailAndPassword(
         email: _emailController.text, password: _passwordController.text);
-
     await FirebaseFirestore.instance
         .collection('USERS')
         .doc(FirebaseAuth.instance.currentUser!.uid)

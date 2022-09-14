@@ -45,7 +45,6 @@ class _SearchGroupPageState extends State<SearchGroupPage> {
           tag: 'example',
         ),
         Expanded(
-          //동성이랑, isFullx인 것들만 띄워주기
           child: FirestoreSearchResults.builder(
             tag: 'example',
             firestoreCollectionName: 'GROUPS',
@@ -53,7 +52,7 @@ class _SearchGroupPageState extends State<SearchGroupPage> {
             dataListFromSnapshot:
                 GroupModel(memberList: []).dataListFromSnapshot,
             builder: (context, snapshot) {
-              if(snapshot.hasError){
+              if (snapshot.hasError) {
                 return Center(
                   child: Text(snapshot.error.toString()),
                 );
@@ -68,74 +67,105 @@ class _SearchGroupPageState extends State<SearchGroupPage> {
                 return ListView.builder(
                     shrinkWrap: true,
                     itemCount: groupList.length,
-                    itemBuilder: (context, index) {
+                    itemBuilder: (listViewContext, index) {
                       final GroupModel group = groupList[index];
-
-                      return Container(
-                        decoration: BoxDecoration(border: Border.all()),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              flex: 7,
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Padding(
-                                    padding: const EdgeInsets.all(8.0),
-                                    child: Text(
-                                      '${group.name}',
-                                      style:
-                                          Theme.of(context).textTheme.titleLarge,
-                                    ),
+                      final String currentUserId =
+                          FirebaseAuth.instance.currentUser!.uid;
+                      return FutureBuilder<bool>(
+                          future:
+                              group.isGenderSameWithCurrentUser(currentUserId),
+                          builder: (context, snapshot) {
+                            if (snapshot.hasData) {
+                              if (snapshot.data! &&
+                                  group.memberList.length < group.capacity!) {
+                                return Container(
+                                  decoration:
+                                      BoxDecoration(border: Border.all()),
+                                  child: Row(
+                                    children: [
+                                      Expanded(
+                                        flex: 7,
+                                        child: Column(
+                                          mainAxisSize: MainAxisSize.min,
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Padding(
+                                              padding:
+                                                  const EdgeInsets.all(8.0),
+                                              child: Text(
+                                                '${group.name}',
+                                                style: Theme.of(context)
+                                                    .textTheme
+                                                    .titleLarge,
+                                              ),
+                                            ),
+                                            Padding(
+                                              padding: const EdgeInsets.only(
+                                                  bottom: 8.0,
+                                                  left: 8.0,
+                                                  right: 8.0),
+                                              child: Text(
+                                                  '${group.leader!.name}',
+                                                  style: Theme.of(context)
+                                                      .textTheme
+                                                      .bodyLarge),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      Expanded(
+                                        flex: 3,
+                                        child: Padding(
+                                          padding: const EdgeInsets.all(8.0),
+                                          child: OutlinedButton(
+                                            //double check!
+                                            child: const Text('Join!'),
+                                            onPressed: () async {
+                                              UserModel user =
+                                                  UserModel.fromSnapshot(await f
+                                                      .collection('USERS')
+                                                      .doc(_auth
+                                                          .currentUser!.uid)
+                                                      .get());
+                                              user.joinedGroupName =
+                                                  group.name!;
+                                              await f
+                                                  .collection('USERS')
+                                                  .doc(user.pk)
+                                                  .update({
+                                                'joinedGroupName':
+                                                    user.joinedGroupName
+                                              });
+                                              group.memberList.add(user);
+                                              await f
+                                                  .collection('GROUPS')
+                                                  .doc(group.name)
+                                                  .update({
+                                                'memberList': group.memberList
+                                                    .map((e) => e.toJson())
+                                                    .toList()
+                                              });
+                                              Navigator.pop(listViewContext);
+                                            },
+                                          ),
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                  Padding(
-                                    padding: const EdgeInsets.only(
-                                        bottom: 8.0, left: 8.0, right: 8.0),
-                                    child: Text('${group.leader!.name}',
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .bodyLarge),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            Expanded(
-                              flex: 3,
-                              child: Padding(
-                                padding: const EdgeInsets.all(8.0),
-                                child: OutlinedButton(
-                                  //double check!
-                                  child: const Text('Join!'),
-                                  onPressed: () async {
-                                    UserModel user = UserModel.fromSnapshot(
-                                        await f.collection('USERS').doc(_auth.currentUser!.uid).get()
-                                    );
-                                    user.joinedGroupName = group.name!;
-                                    await f
-                                        .collection('USERS')
-                                        .doc(user.pk)
-                                        .update({'joinedGroupName': user.joinedGroupName});
-                                    group.memberList
-                                        .add(user);
-                                    await f
-                                        .collection('GROUPS')
-                                        .doc(group.name)
-                                        .update({
-                                      'memberList': group.memberList.map((e) => e.toJson()).toList()
-                                    });
-                                    Navigator.pop(context);
-                                  },
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
+                                );
+                              } else {
+                                return const SizedBox(height: 0);
+                              }
+                            }
+                            return const Center(
+                              child: CircularProgressIndicator(),
+                            );
+                          });
                     });
               }
-
               if (snapshot.connectionState == ConnectionState.done) {
                 if (!snapshot.hasData) {
                   return const Center(
