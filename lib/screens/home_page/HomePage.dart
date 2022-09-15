@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:practice_flutter/screens/search_group_page/SearchGroupPage.dart';
@@ -6,6 +8,7 @@ import '../create_group_page/CreateGroupPage.dart';
 import 'package:practice_flutter/models/GroupModel.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:get/get.dart';
+import 'package:flutter_animated_button/flutter_animated_button.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -15,9 +18,62 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  final isSelected = <bool>[false, false];
+  final _isSelected = <bool>[false, false];
   final f = FirebaseFirestore.instance;
   final _auth = FirebaseAuth.instance;
+  late Timer _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => verifyEmail());
+  }
+
+  Future verifyEmail() async {
+    if (!_auth.currentUser!.emailVerified) {
+      await Get.defaultDialog(
+        titlePadding: EdgeInsets.all(20),
+        title: '이메일 인증을 안하셨네요!',
+        middleText: '전송 버튼을 누른 후 전송된 이메일의 링크를 눌러주세요!',
+        barrierDismissible: false,
+        contentPadding: EdgeInsets.all(20),
+        confirm: AnimatedButton(
+          onPress: () {
+              _auth.currentUser!.sendEmailVerification();
+              _timer = Timer.periodic(Duration(seconds: 3), (timer) async {
+                print('hi');
+                await FirebaseAuth.instance.currentUser?.reload();
+                final user = _auth.currentUser;
+                if (user!.emailVerified == true) {
+                  timer.cancel();
+                  Get.back();
+                  //Navigator.pop(context, true);
+                }
+              });
+          },
+          height: 35,
+          width: 100,
+          text: '전송',
+          isReverse: true,
+          textStyle: TextStyle(color: Colors.black),
+          selectedTextColor: Colors.black,
+          transitionType: TransitionType.LEFT_TO_RIGHT,
+          selectedBackgroundColor: Colors.lightGreen,
+          backgroundColor: Colors.white,
+          borderColor: Colors.grey,
+          borderRadius: 50,
+          borderWidth: 2,
+        ),
+      );
+      Get.snackbar('이메일 인증완료', '이제 마음껏 어플을 사용해보세요!', snackPosition: SnackPosition.BOTTOM);
+    }
+  }
+
+  @override
+  void dispose() {
+    _timer.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -108,17 +164,17 @@ class _HomePageState extends State<HomePage> {
       hoverColor: Color(0xFF86D58E).withOpacity(0.04),
       borderRadius: BorderRadius.circular(4.0),
       constraints: BoxConstraints(minHeight: 36.0),
-      isSelected: isSelected,
+      isSelected: _isSelected,
       onPressed: (index) {
         if (index == 0) {
           setState(() {
-            isSelected[0] = true;
-            isSelected[1] = false;
+            _isSelected[0] = true;
+            _isSelected[1] = false;
           });
         } else {
           setState(() {
-            isSelected[0] = false;
-            isSelected[1] = true;
+            _isSelected[0] = false;
+            _isSelected[1] = true;
           });
         }
         openBottomSheet(index, _size);

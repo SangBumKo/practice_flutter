@@ -65,19 +65,10 @@ class _SignUpPageState extends State<SignUpPage> {
                       ],
                     ),
                     const SizedBox(height: 15.0),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: createCustomTextFormField(
+                    createCustomTextFormField(
                               controller: _emailController,
                               guideText: '학교이메일을 입력하세요',
                               keyboardType: TextInputType.emailAddress),
-                        ),
-                        const SizedBox(width: 5.0),
-                        createCustomOutlinedButton(
-                            childText: '인증하기', onPressed: () {}),
-                      ],
-                    ),
                     const SizedBox(height: 15.0),
                     createCustomTextFormField(
                         controller: _passwordController,
@@ -103,8 +94,8 @@ class _SignUpPageState extends State<SignUpPage> {
                         isSearchable: false),
                     const SizedBox(height: 15.0),
                     createCustomOutlinedButton(
-                        childText: '회원가입',
-                        onPressed: () => createUserAndUserData()),
+                        childText: '회원가입!',
+                        onPressed: () => createUserAndUserData(),),
                   ]),
                 ),
               )
