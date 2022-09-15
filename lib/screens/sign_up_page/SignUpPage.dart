@@ -103,7 +103,8 @@ class _SignUpPageState extends State<SignUpPage> {
                         isSearchable: false),
                     const SizedBox(height: 15.0),
                     createCustomOutlinedButton(
-                        childText: '회원가입', onPressed: createUserAndUserData),
+                        childText: '회원가입',
+                        onPressed: () => createUserAndUserData()),
                   ]),
                 ),
               )
@@ -181,6 +182,7 @@ class _SignUpPageState extends State<SignUpPage> {
   void createUserAndUserData() async {
     await FirebaseAuth.instance.createUserWithEmailAndPassword(
         email: _emailController.text, password: _passwordController.text);
+
     await FirebaseFirestore.instance
         .collection('USERS')
         .doc(FirebaseAuth.instance.currentUser!.uid)

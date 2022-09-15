@@ -5,6 +5,7 @@ import '../../models/UserModel.dart';
 import '../create_group_page/CreateGroupPage.dart';
 import 'package:practice_flutter/models/GroupModel.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:get/get.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -54,7 +55,6 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  //여기에 필터거는 건 쉬울듯? getGender안해도 괜찮음! -> joinedGroupName가져와야되네...
   StreamBuilder viewGroupsStreamBuilder() {
     return StreamBuilder<QuerySnapshot>(
         stream: f.collection('GROUPS').snapshots(),
@@ -115,61 +115,13 @@ class _HomePageState extends State<HomePage> {
             isSelected[0] = true;
             isSelected[1] = false;
           });
-          showModalBottomSheet<void>(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(30),
-              ),
-              isScrollControlled: true,
-              enableDrag: true,
-              context: context,
-              builder: (BuildContext context) {
-                return Container(
-                  height: _size.height * 0.7,
-                  child: SearchGroupPage(),
-                );
-              });
         } else {
           setState(() {
-            isSelected[1] = true;
             isSelected[0] = false;
+            isSelected[1] = true;
           });
-          showModalBottomSheet<void>(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(30),
-            ),
-            isScrollControlled: true,
-            enableDrag: true,
-            context: context,
-            builder: (BuildContext context) {
-              return Container(
-                  height: _size.height * 0.7,
-                  child: Column(children: <Widget>[
-                    Row(
-                      children: [
-                        Expanded(
-                            child: Container(
-                                child: Padding(
-                          padding: const EdgeInsets.only(left: 20),
-                          child: Text(
-                            '방 만들기!',
-                            style: TextStyle(
-                                fontSize: 20, fontWeight: FontWeight.bold),
-                          ),
-                        ))),
-                        IconButton(
-                          icon: Icon(
-                            Icons.close_rounded,
-                            color: Colors.grey,
-                          ),
-                          onPressed: () => Navigator.pop(context),
-                        ),
-                      ],
-                    ),
-                    const CreateGroupPage()
-                  ]));
-            },
-          );
         }
+        openBottomSheet(index, _size);
       },
       children: [
         Padding(
@@ -185,78 +137,76 @@ class _HomePageState extends State<HomePage> {
   }
 
   void exitCheckDialog() {
-    showDialog(
-        context: context,
-        //barrierDismissible - Dialog를 제외한 다른 화면 터치 x
-        barrierDismissible: false,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10.0)),
-            title: Column(
-              children: <Widget>[
-                Text("정말 나가시겠습니까?"),
-              ],
-            ),
-            //
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Text(
-                  "리더의 경우 그룹을 나갈시 그룹이 사라집니다.",
+    Get.defaultDialog(
+      title: '정말 나가시겠습니까?',
+      middleText: '리더가 그룹을 나갈 경우 그룹이 사라집니다.',
+      barrierDismissible: false,
+      contentPadding: EdgeInsets.all(20),
+      textConfirm: '예',
+      onConfirm: () => exitGroup(),
+      confirmTextColor: Colors.black,
+      textCancel: '아니오',
+      cancelTextColor: Colors.black,
+    );
+  }
+
+  Future<void> exitGroup() async {
+    DocumentSnapshot<Map<String, dynamic>> userDocument =
+        await f.collection('USERS').doc(_auth.currentUser!.uid).get();
+    UserModel user = UserModel.fromSnapshot(userDocument);
+    GroupModel group = GroupModel.fromSnapshot(
+        await f.collection('GROUPS').doc(user.joinedGroupName).get());
+
+    if (group.leader!.pk == user.pk) {
+      await f.collection('GROUPS').doc(user.joinedGroupName).delete();
+      group.memberList.forEach((member) {
+        f.collection('USERS').doc(member.pk).update({'joinedGroupName': ''});
+      });
+    } else {
+      group.memberList =
+          group.memberList.where((member) => member.pk != user.pk).toList();
+      await f.collection('GROUPS').doc(user.joinedGroupName).update(
+          {'memberList': group.memberList.map((e) => e.toJson()).toList()});
+      await f.collection('USERS').doc(user.pk).update({'joinedGroupName': ''});
+    }
+    Get.back();
+  }
+
+  void openBottomSheet(int index, Size size) {
+    Get.bottomSheet(
+      SizedBox(
+        height: size.height * 0.8,
+        child: Column(children: <Widget>[
+          Row(
+            children: [
+              Expanded(
+                  child: Padding(
+                padding: const EdgeInsets.only(left: 20),
+                child: Text(
+                  index == 0 ? '방 찾기!' : '방 만들기!',
+                  style: const TextStyle(
+                      fontSize: 20, fontWeight: FontWeight.bold),
                 ),
-              ],
-            ),
-            actions: <Widget>[
-              TextButton(
-                child: const Text("예"),
-                onPressed: () async {
-                  DocumentSnapshot<Map<String, dynamic>> userDocument = await f
-                      .collection('USERS')
-                      .doc(_auth.currentUser!.uid)
-                      .get();
-                  UserModel user = UserModel.fromSnapshot(userDocument);
-                  GroupModel group = GroupModel.fromSnapshot(await f
-                      .collection('GROUPS')
-                      .doc(user.joinedGroupName)
-                      .get());
-
-                  if (group.leader!.pk == user.pk) {
-                    await f
-                        .collection('GROUPS')
-                        .doc(user.joinedGroupName)
-                        .delete();
-                    group.memberList.forEach((member) {
-                      f
-                          .collection('USERS')
-                          .doc(member.pk)
-                          .update({'joinedGroupName': ''});
-                    });
-                  } else {
-                    group.memberList = group.memberList.where((member) => member.pk != user.pk).toList();
-                    await f
-                        .collection('GROUPS')
-                        .doc(user.joinedGroupName)
-                        .update(
-                        {'memberList': group.memberList.map((e) => e.toJson()).toList()
-                        });
-                    await f
-                        .collection('USERS')
-                        .doc(user.pk)
-                        .update({'joinedGroupName': ''});
-                  }
-
-                  Navigator.pop(context);
-                }),
-              TextButton(
-                child: const Text("아니요"),
-                onPressed: () {
-                  Navigator.pop(context);
-                },
+              )),
+              IconButton(
+                icon: const Icon(
+                  Icons.close_rounded,
+                  color: Colors.grey,
+                ),
+                onPressed: () => Get.back(),
               ),
             ],
-          );
-        });
+          ),
+          index == 0 ? const SearchGroupPage() : const CreateGroupPage(),
+        ]),
+      ),
+      backgroundColor: Colors.white,
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(10),
+      ),
+      isScrollControlled: true,
+      enableDrag: true,
+    );
   }
 }

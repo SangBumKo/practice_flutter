@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:practice_flutter/models/GroupModel.dart';
 import 'package:animated_custom_dropdown/custom_dropdown.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-
+import 'package:get/get.dart';
 import '../../models/UserModel.dart';
 
 class CreateGroupPage extends StatefulWidget {
@@ -70,14 +70,12 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
               child: const Text('생성'),
               onPressed: () {
                 if (_formKey.currentState!.validate()) {
-                  ScaffoldMessenger.of(context)
-                      .showSnackBar(const SnackBar(content: Text('방 생성완료!')));
+                  Get.snackbar('그룹 생성완료!', '이제 다른 그룹을 찾아보세요!', snackPosition: SnackPosition.BOTTOM);
                   createGroup();
                 } else {
-                  ScaffoldMessenger.of(context)
-                      .showSnackBar(const SnackBar(content: Text('다시 시도해주세요')));
+                  Get.snackbar('그룹을 만들지 못했어요ㅠㅠ', '방이름을 다시 입력해주세요!');
                 }
-                Navigator.pop(context);
+                Get.back(closeOverlays: true);
               },
               // 버튼에 텍스트 부여
             ),
