@@ -2,7 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:animated_custom_dropdown/custom_dropdown.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../../controllers/UserController.dart';
+import '../../controllers/CurrentUserController.dart';
 import '../../models/UserModel.dart';
 import 'package:get/get.dart';
 
@@ -16,8 +16,7 @@ class SignUpPage extends StatefulWidget {
 class _SignUpPageState extends State<SignUpPage> {
   final f = FirebaseFirestore.instance;
   final _auth = FirebaseAuth.instance;
-  final currentUserController = Get.put(CurrentUserController(), permanent: true);
-  //final user = currentUserController.user.value;
+  CurrentUserController currentUserController = Get.put(CurrentUserController(), permanent: true);
 
   final List<String> _genderList = ['남자', '여자'];
   final List<String> _majorList = ['컴퓨터공학과', 'IT융합공학과', '유아교육과'];

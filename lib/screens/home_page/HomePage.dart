@@ -1,8 +1,9 @@
 import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:practice_flutter/controllers/UserController.dart';
+import 'package:practice_flutter/controllers/CurrentUserController.dart';
 import 'package:practice_flutter/screens/search_group_page/SearchGroupPage.dart';
+import '../../controllers/CurrentGroupController.dart';
 import '../../models/UserModel.dart';
 import '../create_group_page/CreateGroupPage.dart';
 import 'package:practice_flutter/models/GroupModel.dart';
@@ -18,6 +19,11 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  CurrentUserController currentUserController =
+      Get.put(CurrentUserController(), permanent: true);
+  CurrentGroupController currentGroupController =
+      Get.put(CurrentGroupController(), permanent: true);
+
   final _isSelected = <bool>[false, false];
   final f = FirebaseFirestore.instance;
   final _auth = FirebaseAuth.instance;
@@ -75,44 +81,125 @@ class _HomePageState extends State<HomePage> {
     super.dispose();
   }
 
-
   @override
   Widget build(BuildContext context) {
-    CurrentUserController currentUserController = Get.put(CurrentUserController(), permanent: true);
+    return Obx(() => currentGroupController.group.value.name == null
+        ? outOfGroup()
+        : inGroup());
+  }
+
+  Scaffold outOfGroup() {
     return Scaffold(
       appBar: AppBar(
-        title: Obx(() => Text("Do You Like? ${currentUserController.user.value.gender}")),
+        title: Text("Do You Like? ${currentUserController.user.value.joinedGroupName}"),
         backgroundColor: const Color(0xFF86D58E),
       ),
-      body: Stack(children: [
-        StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-          stream: f.collection('USERS').doc(_auth.currentUser!.uid).snapshots(),
-          builder: (context, snapshot) {
-            if (snapshot.hasData) {
-              bool isJoinedGroup = snapshot.data!.get('joinedGroupName') != '';
-              if (isJoinedGroup) {
-                return Center(
-                    child: OutlinedButton(
-                  child: const Text('그룹 나가기'),
-                  onPressed: () => exitCheckDialog(),
-                ));
-              }
-              return Stack(children: [
-                viewGroupsStreamBuilder(),
-                Positioned(
-                  child: searchOrCreateGroupButton(),
-                  bottom: 20,
-                  right: 20,
-                )
-              ]);
-            }
-            return const Center(
-              child: CircularProgressIndicator(),
-            );
-          },
-        ),
-      ]),
+      body: Stack(
+        children: [
+          SizedBox.expand(),
+          viewGroupsStreamBuilder(),
+          Padding(
+            padding: const EdgeInsets.all(20.0),
+            child: Align(
+              alignment: Alignment.bottomRight,
+              child: searchOrCreateGroupButton(),
+            ),
+          ),
+        ]
+      ),
     );
+  }
+
+  Scaffold inGroup() {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text("Do You Like?"),
+        backgroundColor: const Color(0xFF86D58E),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.all(10.0),
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom( backgroundColor: Colors.white),
+              child: const Text('그룹 나가기'),
+              onPressed: () => exitCheckDialog(),
+            ),
+          )
+        ],
+      ),
+      body: Stack(
+          children: [
+            SizedBox.expand(),
+            viewFilteredGroupsStreamBuilder(),
+            Padding(
+              padding: const EdgeInsets.all(10.0),
+              child: Align(
+                alignment: Alignment.bottomRight,
+                child: IconButton(
+                  color: Colors.red,
+                  icon: Icon(Icons.heart_broken),
+                  onPressed: () => openBottomSheet('likes', Get.size),
+                ),
+              ),
+            ),
+          ]
+      ),
+    );
+  }
+
+  StreamBuilder viewFilteredGroupsStreamBuilder() {
+    final String genderOfCurrentUser = currentUserController.user.value.gender!;
+    final int capacityOfCurrentGroup =
+        currentGroupController.group.value.capacity!;
+    return StreamBuilder<QuerySnapshot>(
+        stream: f.collection('GROUPS').snapshots(),
+        builder: (context, snapshot) {
+          if (snapshot.hasData) {
+            final List<GroupModel> unfilteredGroupList =
+                GroupModel(memberList: [])
+                    .dataListFromSnapshots(snapshot.data!.docs);
+            final List<GroupModel> filteredGroupList =
+                unfilteredGroupList.where((group) {
+              final bool isGenderSame =
+                  group.leader!.gender == genderOfCurrentUser;
+              final bool isFull = group.memberList.length == group.capacity!;
+              final bool isCapacitySame = group.capacity ==
+                  capacityOfCurrentGroup; //currentUser의 Group정보
+              //freeze x
+              return (!isGenderSame && isFull && isCapacitySame);
+            }).toList();
+            return GridView.builder(
+                itemCount: filteredGroupList.length,
+                shrinkWrap: true,
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  childAspectRatio: 1,
+                ),
+                itemBuilder: (BuildContext context, int index) {
+                  final GroupModel group = filteredGroupList[index];
+                  return Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(12.0),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(group.name!,
+                              style: const TextStyle(
+                                  fontSize: 18.0, fontWeight: FontWeight.bold)),
+                          const SizedBox(
+                            height: 16.0,
+                          ),
+                          Expanded(
+                              child: Text(group.leader!.name!,
+                                  overflow: TextOverflow.fade)),
+                        ],
+                      ),
+                    ),
+                  );
+                });
+          }
+          return const Center(child: CircularProgressIndicator());
+        });
   }
 
   StreamBuilder viewGroupsStreamBuilder() {
@@ -182,7 +269,7 @@ class _HomePageState extends State<HomePage> {
             _isSelected[1] = true;
           });
         }
-        openBottomSheet(index, _size);
+        openBottomSheet(index == 0 ? 'search' : 'create', _size);
       },
       children: [
         Padding(
@@ -211,29 +298,34 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Future<void> exitGroup() async {
-    DocumentSnapshot<Map<String, dynamic>> userDocument =
-        await f.collection('USERS').doc(_auth.currentUser!.uid).get();
-    UserModel user = UserModel.fromSnapshot(userDocument);
-    GroupModel group = GroupModel.fromSnapshot(
-        await f.collection('GROUPS').doc(user.joinedGroupName).get());
+  Future<void> exitGroup() async{
+    UserModel currentUser = currentUserController.user.value;
+    GroupModel currentGroup = currentGroupController.group.value;
+    print('${currentGroupController.group.value.name}');
+    print('${currentGroup.leader!.pk}');
+    print('${currentUser.pk}');
+    print('${currentUser.joinedGroupName}');
 
-    if (group.leader!.pk == user.pk) {
-      await f.collection('GROUPS').doc(user.joinedGroupName).delete();
-      group.memberList.forEach((member) {
+    if (currentGroup.leader!.pk == currentUser.pk) {
+      await f.collection('GROUPS').doc(currentUser.joinedGroupName).delete();
+      currentGroup.memberList.forEach((member) {
         f.collection('USERS').doc(member.pk).update({'joinedGroupName': ''});
       });
     } else {
-      group.memberList =
-          group.memberList.where((member) => member.pk != user.pk).toList();
-      await f.collection('GROUPS').doc(user.joinedGroupName).update(
-          {'memberList': group.memberList.map((e) => e.toJson()).toList()});
-      await f.collection('USERS').doc(user.pk).update({'joinedGroupName': ''});
+      List<UserModel> newMemberList = currentGroup.memberList.where((member) => member.pk != currentUser.pk).toList();
+      currentGroupController.updateCurrentGroupMemberList(newMemberList);
+      await f.collection('GROUPS').doc(currentGroup.name).update(
+          {'memberList': currentGroup.memberList.map((e) => e.toJson()).toList()});
+      await f.collection('USERS').doc(currentUser.pk).update({'joinedGroupName': ''});
     }
+    currentGroupController.updateCurrentGroup(GroupModel(memberList: []));
+    currentUserController.updateJoinedGroupName('');
     Get.back();
   }
 
-  void openBottomSheet(int index, Size size) {
+  void openBottomSheet(String goal, Size size) {
+    Map<String, Widget>showWidgetData = {'search': SearchGroupPage(), 'create': CreateGroupPage(), 'likes': Container()};
+    Map<String, String>showTextData = {'search' : '방 찾기!', 'create' : '방 만들기!', 'likes' : '받은 하트'};
     Get.bottomSheet(
       SizedBox(
         height: size.height * 0.8,
@@ -244,7 +336,7 @@ class _HomePageState extends State<HomePage> {
                   child: Padding(
                 padding: const EdgeInsets.only(left: 20),
                 child: Text(
-                  index == 0 ? '방 찾기!' : '방 만들기!',
+                  showTextData[goal]!,
                   style: const TextStyle(
                       fontSize: 20, fontWeight: FontWeight.bold),
                 ),
@@ -258,7 +350,7 @@ class _HomePageState extends State<HomePage> {
               ),
             ],
           ),
-          index == 0 ? const SearchGroupPage() : const CreateGroupPage(),
+          showWidgetData[goal]!,
         ]),
       ),
       backgroundColor: Colors.white,

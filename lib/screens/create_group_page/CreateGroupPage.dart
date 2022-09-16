@@ -4,7 +4,9 @@ import 'package:practice_flutter/models/GroupModel.dart';
 import 'package:animated_custom_dropdown/custom_dropdown.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:get/get.dart';
+import '../../controllers/CurrentUserController.dart';
 import '../../models/UserModel.dart';
+import '../../controllers/CurrentGroupController.dart';
 
 class CreateGroupPage extends StatefulWidget {
   const CreateGroupPage({Key? key}) : super(key: key);
@@ -16,6 +18,9 @@ class CreateGroupPage extends StatefulWidget {
 class _CreateGroupPageState extends State<CreateGroupPage> {
   final f = FirebaseFirestore.instance;
   final _auth = FirebaseAuth.instance;
+  CurrentUserController currentUserController = Get.put(CurrentUserController(), permanent: true);
+  CurrentGroupController currentGroupController = Get.put(CurrentGroupController(), permanent: true);
+
   final _formKey = GlobalKey<FormState>();
   final List<String>_capacityList = ['1', '2', '3', '4'];
   final TextEditingController _capacityInputController = TextEditingController();
@@ -90,12 +95,14 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
     final user = UserModel.fromSnapshot(userDocument);
     user.joinedGroupName = _groupNameTextEditController.text;
     await f.collection('USERS').doc(user.pk).update({'joinedGroupName' : user.joinedGroupName});
-    await f.collection('GROUPS').doc(_groupNameTextEditController.text).set(
-        GroupModel(
-            name: _groupNameTextEditController.text,
-            capacity: int.parse(_capacityInputController.text),
-            leader: user,
-            memberList: [user]).toJson());
+    GroupModel newGroup =  GroupModel(
+        name: _groupNameTextEditController.text,
+        capacity: int.parse(_capacityInputController.text),
+        leader: user,
+        memberList: [user]);
+    await f.collection('GROUPS').doc(_groupNameTextEditController.text).set(newGroup.toJson());
+    currentGroupController.updateCurrentGroup(newGroup);
+    currentUserController.updateJoinedGroupName(newGroup.name!);
   }
 
   Widget groupNameCheckButton(String str) {
