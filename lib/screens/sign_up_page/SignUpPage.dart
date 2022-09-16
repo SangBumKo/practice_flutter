@@ -2,7 +2,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:animated_custom_dropdown/custom_dropdown.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../../controllers/UserController.dart';
 import '../../models/UserModel.dart';
+import 'package:get/get.dart';
 
 class SignUpPage extends StatefulWidget {
   const SignUpPage({Key? key}) : super(key: key);
@@ -12,6 +14,11 @@ class SignUpPage extends StatefulWidget {
 }
 
 class _SignUpPageState extends State<SignUpPage> {
+  final f = FirebaseFirestore.instance;
+  final _auth = FirebaseAuth.instance;
+  final currentUserController = Get.put(CurrentUserController(), permanent: true);
+  //final user = currentUserController.user.value;
+
   final List<String> _genderList = ['남자', '여자'];
   final List<String> _majorList = ['컴퓨터공학과', 'IT융합공학과', '유아교육과'];
   final List<String> _entranceYearList = [
@@ -66,9 +73,9 @@ class _SignUpPageState extends State<SignUpPage> {
                     ),
                     const SizedBox(height: 15.0),
                     createCustomTextFormField(
-                              controller: _emailController,
-                              guideText: '학교이메일을 입력하세요',
-                              keyboardType: TextInputType.emailAddress),
+                        controller: _emailController,
+                        guideText: '학교이메일을 입력하세요',
+                        keyboardType: TextInputType.emailAddress),
                     const SizedBox(height: 15.0),
                     createCustomTextFormField(
                         controller: _passwordController,
@@ -94,8 +101,9 @@ class _SignUpPageState extends State<SignUpPage> {
                         isSearchable: false),
                     const SizedBox(height: 15.0),
                     createCustomOutlinedButton(
-                        childText: '회원가입!',
-                        onPressed: () => createUserAndUserData(),),
+                      childText: '회원가입!',
+                      onPressed: () => createUserAndUserData(),
+                    ),
                   ]),
                 ),
               )
@@ -171,14 +179,11 @@ class _SignUpPageState extends State<SignUpPage> {
   }
 
   void createUserAndUserData() async {
-    await FirebaseAuth.instance.createUserWithEmailAndPassword(
+    await _auth.createUserWithEmailAndPassword(
         email: _emailController.text, password: _passwordController.text);
 
-    await FirebaseFirestore.instance
-        .collection('USERS')
-        .doc(FirebaseAuth.instance.currentUser!.uid)
-        .set(UserModel(
-          pk: FirebaseAuth.instance.currentUser!.uid,
+    await f.collection('USERS').doc(_auth.currentUser!.uid).set(UserModel(
+          pk: _auth.currentUser!.uid,
           name: _nicknameController.text,
           password: _passwordController.text,
           major: _majorController.text,
@@ -186,5 +191,13 @@ class _SignUpPageState extends State<SignUpPage> {
           gender: _genderController.text,
           email: _emailController.text,
         ).toJson());
+    await storeCurrentUserData();
+  }
+
+  Future<void> storeCurrentUserData() async {
+    DocumentSnapshot<Map<String, dynamic>> userData =
+        await f.collection('USERS').doc(_auth.currentUser!.uid).get();
+    UserModel currentUser = UserModel.fromSnapshot(userData);
+    currentUserController.updateCurrentUser(currentUser);
   }
 }

@@ -1,7 +1,7 @@
 import 'dart:async';
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:practice_flutter/controllers/UserController.dart';
 import 'package:practice_flutter/screens/search_group_page/SearchGroupPage.dart';
 import '../../models/UserModel.dart';
 import '../create_group_page/CreateGroupPage.dart';
@@ -39,17 +39,16 @@ class _HomePageState extends State<HomePage> {
         contentPadding: EdgeInsets.all(20),
         confirm: AnimatedButton(
           onPress: () {
-              _auth.currentUser!.sendEmailVerification();
-              _timer = Timer.periodic(Duration(seconds: 3), (timer) async {
-                print('hi');
-                await FirebaseAuth.instance.currentUser?.reload();
-                final user = _auth.currentUser;
-                if (user!.emailVerified == true) {
-                  timer.cancel();
-                  Get.back();
-                  //Navigator.pop(context, true);
-                }
-              });
+            _auth.currentUser!.sendEmailVerification();
+            _timer = Timer.periodic(Duration(seconds: 3), (timer) async {
+              await FirebaseAuth.instance.currentUser?.reload();
+              final user = _auth.currentUser;
+              //if (user?.emailVerified ?? false)
+              if (user!.emailVerified == true) {
+                timer.cancel();
+                Get.back();
+              }
+            });
           },
           height: 35,
           width: 100,
@@ -65,7 +64,8 @@ class _HomePageState extends State<HomePage> {
           borderWidth: 2,
         ),
       );
-      Get.snackbar('이메일 인증완료', '이제 마음껏 어플을 사용해보세요!', snackPosition: SnackPosition.BOTTOM);
+      Get.snackbar('이메일 인증완료', '이제 마음껏 어플을 사용해보세요!',
+          snackPosition: SnackPosition.BOTTOM);
     }
   }
 
@@ -75,11 +75,13 @@ class _HomePageState extends State<HomePage> {
     super.dispose();
   }
 
+
   @override
   Widget build(BuildContext context) {
+    CurrentUserController currentUserController = Get.put(CurrentUserController(), permanent: true);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Do You Like?'),
+        title: Obx(() => Text("Do You Like? ${currentUserController.user.value.gender}")),
         backgroundColor: const Color(0xFF86D58E),
       ),
       body: Stack(children: [
@@ -95,18 +97,20 @@ class _HomePageState extends State<HomePage> {
                   onPressed: () => exitCheckDialog(),
                 ));
               }
-              return viewGroupsStreamBuilder();
+              return Stack(children: [
+                viewGroupsStreamBuilder(),
+                Positioned(
+                  child: searchOrCreateGroupButton(),
+                  bottom: 20,
+                  right: 20,
+                )
+              ]);
             }
             return const Center(
               child: CircularProgressIndicator(),
             );
           },
         ),
-        Positioned(
-          child: searchOrCreateGroupButton(),
-          bottom: 20,
-          right: 20,
-        )
       ]),
     );
   }
@@ -118,6 +122,7 @@ class _HomePageState extends State<HomePage> {
           if (snapshot.hasData) {
             final List<GroupModel> _groupList = GroupModel(memberList: [])
                 .dataListFromSnapshots(snapshot.data!.docs);
+            //final String genderOfCurrentUser = currentUserController.
             return GridView.builder(
                 itemCount: _groupList.length,
                 shrinkWrap: true,
