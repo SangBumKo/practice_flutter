@@ -10,6 +10,7 @@ import 'package:practice_flutter/models/GroupModel.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:get/get.dart';
 import 'package:flutter_animated_button/flutter_animated_button.dart';
+import 'package:like_button/like_button.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -176,26 +177,7 @@ class _HomePageState extends State<HomePage> {
                 ),
                 itemBuilder: (BuildContext context, int index) {
                   final GroupModel group = filteredGroupList[index];
-                  return Card(
-                    child: Padding(
-                      padding: const EdgeInsets.all(12.0),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(group.name!,
-                              style: const TextStyle(
-                                  fontSize: 18.0, fontWeight: FontWeight.bold)),
-                          const SizedBox(
-                            height: 16.0,
-                          ),
-                          Expanded(
-                              child: Text(group.leader!.name!,
-                                  overflow: TextOverflow.fade)),
-                        ],
-                      ),
-                    ),
-                  );
+                  return createCard(group);
                 });
           }
           return const Center(child: CircularProgressIndicator());
@@ -207,38 +189,19 @@ class _HomePageState extends State<HomePage> {
         stream: f.collection('GROUPS').snapshots(),
         builder: (context, snapshot) {
           if (snapshot.hasData) {
-            final List<GroupModel> _groupList = GroupModel(memberList: [])
+            final List<GroupModel> groupList = GroupModel(memberList: [])
                 .dataListFromSnapshots(snapshot.data!.docs);
             //final String genderOfCurrentUser = currentUserController.
             return GridView.builder(
-                itemCount: _groupList.length,
+                itemCount: groupList.length,
                 shrinkWrap: true,
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 2,
                   childAspectRatio: 1,
                 ),
                 itemBuilder: (BuildContext context, int index) {
-                  final GroupModel _group = _groupList[index];
-                  return Card(
-                    child: Padding(
-                      padding: const EdgeInsets.all(12.0),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(_group.name!,
-                              style: const TextStyle(
-                                  fontSize: 18.0, fontWeight: FontWeight.bold)),
-                          const SizedBox(
-                            height: 16.0,
-                          ),
-                          Expanded(
-                              child: Text(_group.leader!.name!,
-                                  overflow: TextOverflow.fade)),
-                        ],
-                      ),
-                    ),
-                  );
+                  final GroupModel group = groupList[index];
+                  return createCard(group);
                 });
           }
           return const Center(child: CircularProgressIndicator());
@@ -281,6 +244,48 @@ class _HomePageState extends State<HomePage> {
           child: Text('그룹 만들기'),
         ),
       ],
+    );
+  }
+  GestureDetector createCard(GroupModel group){
+    return GestureDetector(
+      onLongPress: () => Get.defaultDialog(
+        title : group.name!,
+        middleText: group.leader!.name!,
+      ),
+      child: Card(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        child: Stack(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(group.name!,
+                      style: const TextStyle(
+                          fontSize: 18.0, fontWeight: FontWeight.bold)),
+                  const SizedBox(
+                    height: 16.0,
+                  ),
+                  Expanded(
+                      child: Text(group.leader!.name!,
+                          overflow: TextOverflow.fade)),
+                ],
+              ),
+            ),
+            //그룹에 들어갔을 떄만 띄워주기
+            currentUserController.user.value.joinedGroupName != '' ?
+            Positioned(
+              bottom: 10,
+              right: 10,
+              child: LikeButton(
+                onTap: currentUserController.sendLike,
+              ),
+            ) : SizedBox(),
+          ],
+        ),
+      ),
     );
   }
 

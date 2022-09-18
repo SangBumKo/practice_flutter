@@ -43,11 +43,6 @@ class GroupModel {
     return groupList;
   }
 
-  Future<bool> isGenderSameWithCurrentUser(String currentUserId) async{
-     String genderOfCurrentUser = await UserModel().getGender(currentUserId);
-     return (genderOfCurrentUser == leader!.gender);
-  }
-
   Map<String, dynamic> toJson() {
     return <String, dynamic>{
       'name': name,
