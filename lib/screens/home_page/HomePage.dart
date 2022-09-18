@@ -98,7 +98,7 @@ class _HomePageState extends State<HomePage> {
       body: Stack(
         children: [
           SizedBox.expand(),
-          viewGroupsStreamBuilder(),
+          viewMatchableGroupsList(),
           Padding(
             padding: const EdgeInsets.all(20.0),
             child: Align(
@@ -130,7 +130,7 @@ class _HomePageState extends State<HomePage> {
       body: Stack(
           children: [
             SizedBox.expand(),
-            viewFilteredGroupsStreamBuilder(),
+            viewMatchableGroupsList(),
             Padding(
               padding: const EdgeInsets.all(10.0),
               child: Align(
@@ -147,26 +147,28 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  StreamBuilder viewFilteredGroupsStreamBuilder() {
-    final String genderOfCurrentUser = currentUserController.user.value.gender!;
-    final int capacityOfCurrentGroup =
-        currentGroupController.group.value.capacity!;
+  StreamBuilder viewMatchableGroupsList(){
+    final UserModel currentUser = currentUserController.user.value;
+    final GroupModel currentGroup =
+    currentGroupController.group.value;
     return StreamBuilder<QuerySnapshot>(
         stream: f.collection('GROUPS').snapshots(),
         builder: (context, snapshot) {
-          if (snapshot.hasData) {
+          if(snapshot.hasData){
             final List<GroupModel> unfilteredGroupList =
-                GroupModel(memberList: [])
-                    .dataListFromSnapshots(snapshot.data!.docs);
+            GroupModel(memberList: [])
+                .dataListFromSnapshots(snapshot.data!.docs);
             final List<GroupModel> filteredGroupList =
-                unfilteredGroupList.where((group) {
+            unfilteredGroupList.where((group) {
               final bool isGenderSame =
-                  group.leader!.gender == genderOfCurrentUser;
+                  group.leader!.gender == currentUser.gender!;
               final bool isFull = group.memberList.length == group.capacity!;
-              final bool isCapacitySame = group.capacity ==
-                  capacityOfCurrentGroup; //currentUser의 Group정보
-              //freeze x
-              return (!isGenderSame && isFull && isCapacitySame);
+              //그룹에 들어가지 않으면 currentGorup.capacity == null임 그때 접근해서 null Error발생했던 것
+              final bool? isCapacitySame = group.capacity ==
+                  currentGroup.capacity;
+              final bool userJoinedGroup = currentUser.joinedGroupName != '';
+              if(userJoinedGroup) return (!isGenderSame && isFull && isCapacitySame!);
+              return (isGenderSame && !isFull);
             }).toList();
             return GridView.builder(
                 itemCount: filteredGroupList.length,
@@ -181,31 +183,8 @@ class _HomePageState extends State<HomePage> {
                 });
           }
           return const Center(child: CircularProgressIndicator());
-        });
-  }
-
-  StreamBuilder viewGroupsStreamBuilder() {
-    return StreamBuilder<QuerySnapshot>(
-        stream: f.collection('GROUPS').snapshots(),
-        builder: (context, snapshot) {
-          if (snapshot.hasData) {
-            final List<GroupModel> groupList = GroupModel(memberList: [])
-                .dataListFromSnapshots(snapshot.data!.docs);
-            //final String genderOfCurrentUser = currentUserController.
-            return GridView.builder(
-                itemCount: groupList.length,
-                shrinkWrap: true,
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  childAspectRatio: 1,
-                ),
-                itemBuilder: (BuildContext context, int index) {
-                  final GroupModel group = groupList[index];
-                  return createCard(group);
-                });
-          }
-          return const Center(child: CircularProgressIndicator());
-        });
+        }
+    );
   }
 
   ToggleButtons searchOrCreateGroupButton() {
