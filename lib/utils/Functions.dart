@@ -7,7 +7,6 @@ import '../controllers/CurrentUserController.dart';
 import '../models/GroupModel.dart';
 import '../models/UserModel.dart';
 
-
 CurrentUserController currentUserController =
 Get.put(CurrentUserController(), permanent: true);
 CurrentGroupController currentGroupController =

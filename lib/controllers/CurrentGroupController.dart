@@ -1,12 +1,18 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:get/get.dart';
+import 'package:uuid/uuid.dart';
 import '../models/GroupModel.dart';
 import '../models/UserModel.dart';
+import 'ChattingPageController.dart';
 
 class CurrentGroupController extends GetxService{
   final f = FirebaseFirestore.instance;
   final auth = FirebaseAuth.instance;
+  final uuid = Uuid();
+  ChattingPageController chattingPageController =
+  Get.put(ChattingPageController(), permanent: true);
+
   final Rx<GroupModel> _group = GroupModel(memberList: []).obs;
   Rx<GroupModel> get group => _group;
 
@@ -60,8 +66,15 @@ class CurrentGroupController extends GetxService{
   }
 
   void acceptLike(GroupModel targetGroup){
+    ///for path참조
+    String chattingRoomKey = uuid.v1();
+    chattingPageController.chattingRoomKey = chattingRoomKey;
+
+    _group.value.memberList.forEach((member) => member.chattingRoomKey = chattingRoomKey);
+    targetGroup.memberList.forEach((member) => member.chattingRoomKey = chattingRoomKey);
+    ///만약 chattingRoomKey != ''일시 채팅방으로 이동하는 걸로하자
     //createChattingRoom
-  }
+  } 
 
   void denyLike(GroupModel targetGroup){
     _group.value.likesGot.remove(targetGroup.gk!);
