@@ -2,20 +2,26 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'UserModel.dart';
 
 class GroupModel {
+  String? gk;
   String? name;
   int? capacity;
   UserModel? leader;
   List<UserModel> memberList = [];
+  List<String> likesSent = [];
+  List<String> likesGot = [];
 
   GroupModel(
-      {this.name, this.capacity, this.leader, required this.memberList});
+      {this.gk, this.name, this.capacity, this.leader, required this.memberList});
 
 
   GroupModel.fromJson(Map<String, dynamic> json) {
+    gk = json['gk'];
     name = json['name'];
     capacity = json['capacity'];
     leader = UserModel.fromdynamic(json['leader']);
     memberList = (json['memberList'] as List).map((e) => UserModel.fromdynamic(e)).toList();
+    likesSent = (json['likesSent'] as List).map((e) => e.toString()).toList();
+    likesGot = (json['likesGot'] as List).map((e) => e.toString()).toList();
   }
 
   GroupModel.fromSnapshot(DocumentSnapshot<Map<String, dynamic>> snapshot)
@@ -45,10 +51,14 @@ class GroupModel {
 
   Map<String, dynamic> toJson() {
     return <String, dynamic>{
+      'gk' : gk,
       'name': name,
       'capacity': capacity,
       'leader': leader!.toJson(),
       'memberList': memberList.map((e) => e.toJson()).toList(),
+      'likesSent' : likesSent,
+      'likesGot' : likesGot,
     };
   }
 }
+

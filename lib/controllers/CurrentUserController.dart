@@ -20,17 +20,7 @@ class CurrentUserController extends GetxService{
   void updateCurrentUser(UserModel currentUser){
     _user(currentUser);
   }
-  void updateJoinedGroupName(String groupName){
-    _user.value.joinedGroupName = groupName;
-  }
-
-  Future<bool> sendLike(bool isLiked) async{
-    /// send your request here
-    /// 여기에 라이크 보내는 함수를 작성해야겠구만
-    final bool success= 1==1;
-    //await sendRequest();
-
-    /// if failed, you can do nothing
-    return success? !isLiked:isLiked;
+  void updateJoinedGroupGk(String groupGk){
+    _user.value.joinedGroupGk = groupGk;
   }
 }

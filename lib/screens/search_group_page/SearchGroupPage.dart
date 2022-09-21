@@ -1,12 +1,11 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:firestore_search/firestore_search.dart';
 import 'package:practice_flutter/models/GroupModel.dart';
 import 'package:get/get.dart';
 import '../../controllers/CurrentGroupController.dart';
 import '../../controllers/CurrentUserController.dart';
-import '../../models/UserModel.dart';
+import '../../utils/Functions.dart';
 
 class SearchGroupPage extends StatefulWidget {
   const SearchGroupPage({Key? key}) : super(key: key);
@@ -17,9 +16,11 @@ class SearchGroupPage extends StatefulWidget {
 
 class _SearchGroupPageState extends State<SearchGroupPage> {
   final f = FirebaseFirestore.instance;
-  final _auth = FirebaseAuth.instance;
-  CurrentUserController currentUserController = Get.put(CurrentUserController(), permanent: true);
-  CurrentGroupController currentGroupController = Get.put(CurrentGroupController(), permanent: true);
+  //final _auth = FirebaseAuth.instance;
+  CurrentUserController currentUserController =
+      Get.put(CurrentUserController(), permanent: true);
+  CurrentGroupController currentGroupController =
+      Get.put(CurrentGroupController(), permanent: true);
   TextEditingController controller = TextEditingController();
 
   @override
@@ -42,10 +43,14 @@ class _SearchGroupPageState extends State<SearchGroupPage> {
             }
             if (snapshot.hasData) {
               final List<GroupModel>? unfilteredGroupList = snapshot.data;
-              final String genderOfCurrentUser = currentUserController.user.value.gender!;
-              final List<GroupModel>? filteredGroupList = unfilteredGroupList!.where((group) {
-                final bool isGenderSame = group.leader!.gender == genderOfCurrentUser;
-                final bool isNotFull = group.memberList.length < group.capacity!;
+              final String genderOfCurrentUser =
+                  currentUserController.user.value.gender!;
+              final List<GroupModel>? filteredGroupList =
+                  unfilteredGroupList!.where((group) {
+                final bool isGenderSame =
+                    group.leader!.gender == genderOfCurrentUser;
+                final bool isNotFull =
+                    group.memberList.length < group.capacity!;
                 return (isNotFull && isGenderSame);
               }).toList();
               if (filteredGroupList!.isEmpty) {
@@ -66,25 +71,20 @@ class _SearchGroupPageState extends State<SearchGroupPage> {
                             flex: 7,
                             child: Column(
                               mainAxisSize: MainAxisSize.min,
-                              mainAxisAlignment:
-                              MainAxisAlignment.center,
-                              crossAxisAlignment:
-                              CrossAxisAlignment.start,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Padding(
                                   padding: const EdgeInsets.all(8.0),
                                   child: Text(
                                     '${group.name}',
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .titleLarge,
+                                    style:
+                                        Theme.of(context).textTheme.titleLarge,
                                   ),
                                 ),
                                 Padding(
                                   padding: const EdgeInsets.only(
-                                      bottom: 8.0,
-                                      left: 8.0,
-                                      right: 8.0),
+                                      bottom: 8.0, left: 8.0, right: 8.0),
                                   child: Text('${group.leader!.name}',
                                       style: Theme.of(context)
                                           .textTheme
@@ -100,33 +100,7 @@ class _SearchGroupPageState extends State<SearchGroupPage> {
                               child: OutlinedButton(
                                 //double check!
                                 child: const Text('Join!'),
-                                onPressed: () async {
-                                  UserModel user =
-                                  UserModel.fromSnapshot(await f
-                                      .collection('USERS')
-                                      .doc(_auth.currentUser!.uid)
-                                      .get());
-                                  user.joinedGroupName = group.name!;
-                                  await f
-                                      .collection('USERS')
-                                      .doc(user.pk)
-                                      .update({
-                                    'joinedGroupName':
-                                    user.joinedGroupName
-                                  });
-                                  group.memberList.add(user);
-                                  await f
-                                      .collection('GROUPS')
-                                      .doc(group.name)
-                                      .update({
-                                    'memberList': group.memberList
-                                        .map((e) => e.toJson())
-                                        .toList()
-                                  });
-                                  currentGroupController.updateCurrentGroup(group);
-                                  currentUserController.updateJoinedGroupName(user.joinedGroupName);
-                                  Get.back(closeOverlays: true);
-                                },
+                                onPressed: () => joinGroup(group),
                               ),
                             ),
                           ),

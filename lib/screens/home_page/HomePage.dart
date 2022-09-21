@@ -5,12 +5,13 @@ import 'package:practice_flutter/controllers/CurrentUserController.dart';
 import 'package:practice_flutter/screens/search_group_page/SearchGroupPage.dart';
 import '../../controllers/CurrentGroupController.dart';
 import '../../models/UserModel.dart';
+import '../../utils/Functions.dart';
 import '../create_group_page/CreateGroupPage.dart';
 import 'package:practice_flutter/models/GroupModel.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:get/get.dart';
 import 'package:flutter_animated_button/flutter_animated_button.dart';
-import 'package:like_button/like_button.dart';
+import 'package:salomon_bottom_bar/salomon_bottom_bar.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -25,10 +26,11 @@ class _HomePageState extends State<HomePage> {
   CurrentGroupController currentGroupController =
       Get.put(CurrentGroupController(), permanent: true);
 
-  final _isSelected = <bool>[false, false];
   final f = FirebaseFirestore.instance;
   final _auth = FirebaseAuth.instance;
+  final _isSelected = [false, false];
   late Timer _timer;
+  int _currentNavBarIndex = 0;
 
   @override
   void initState() {
@@ -83,8 +85,9 @@ class _HomePageState extends State<HomePage> {
   }
 
   @override
+  //HomePage 구조
   Widget build(BuildContext context) {
-    return Obx(() => currentGroupController.group.value.name == null
+    return Obx(() => currentGroupController.group.value.gk == null
         ? outOfGroup()
         : inGroup());
   }
@@ -92,22 +95,21 @@ class _HomePageState extends State<HomePage> {
   Scaffold outOfGroup() {
     return Scaffold(
       appBar: AppBar(
-        title: Text("Do You Like? ${currentUserController.user.value.joinedGroupName}"),
+        title: Text(
+            "Do You Like?"),
         backgroundColor: const Color(0xFF86D58E),
       ),
-      body: Stack(
-        children: [
-          SizedBox.expand(),
-          viewMatchableGroupsList(),
-          Padding(
-            padding: const EdgeInsets.all(20.0),
-            child: Align(
-              alignment: Alignment.bottomRight,
-              child: searchOrCreateGroupButton(),
-            ),
+      body: Stack(children: [
+        SizedBox.expand(),
+        viewGroupsList(userJoinedGroup: false),
+        Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: Align(
+            alignment: Alignment.bottomRight,
+            child: searchOrCreateGroupButton(),
           ),
-        ]
-      ),
+        ),
+      ]),
     );
   }
 
@@ -115,61 +117,73 @@ class _HomePageState extends State<HomePage> {
     return Scaffold(
       appBar: AppBar(
         title: Text("Do You Like?"),
-        backgroundColor: const Color(0xFF86D58E),
         actions: [
           Padding(
             padding: const EdgeInsets.all(10.0),
             child: ElevatedButton(
-              style: ElevatedButton.styleFrom( backgroundColor: Colors.white),
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.white),
               child: const Text('그룹 나가기'),
               onPressed: () => exitCheckDialog(),
             ),
           )
         ],
       ),
-      body: Stack(
-          children: [
-            SizedBox.expand(),
-            viewMatchableGroupsList(),
-            Padding(
-              padding: const EdgeInsets.all(10.0),
-              child: Align(
-                alignment: Alignment.bottomRight,
-                child: IconButton(
-                  color: Colors.red,
-                  icon: Icon(Icons.heart_broken),
-                  onPressed: () => openBottomSheet('likes', Get.size),
-                ),
-              ),
-            ),
-          ]
+      body: (_currentNavBarIndex < 3)
+          ? Stack(children: [
+              SizedBox.expand(),
+              viewGroupsList(userJoinedGroup: true),
+            ])
+          : Container(),
+      bottomNavigationBar: SalomonBottomBar(
+        currentIndex: _currentNavBarIndex,
+        onTap: (i) => setState(() => _currentNavBarIndex = i),
+        items: [
+          /// Home
+          SalomonBottomBarItem(
+            icon: Icon(Icons.search),
+            title: Text("Match Group"),
+            selectedColor: Colors.purple,
+          ),
+
+          /// Likes
+          SalomonBottomBarItem(
+            icon: Icon(Icons.favorite_border),
+            title: Text("Likes Sent"),
+            selectedColor: Colors.pink,
+          ),
+
+          /// Search
+          SalomonBottomBarItem(
+            icon: Icon(Icons.favorite),
+            title: Text("Likes Got"),
+            selectedColor: Colors.orange,
+          ),
+
+          /// Profile
+          SalomonBottomBarItem(
+            icon: Icon(Icons.person),
+            title: Text("Group Profile"),
+            selectedColor: Colors.teal,
+          ),
+        ],
       ),
     );
   }
 
-  StreamBuilder viewMatchableGroupsList(){
-    final UserModel currentUser = currentUserController.user.value;
-    final GroupModel currentGroup =
-    currentGroupController.group.value;
+  //Body에 들어갈 위젯
+  StreamBuilder viewGroupsList({required bool userJoinedGroup}) {
     return StreamBuilder<QuerySnapshot>(
         stream: f.collection('GROUPS').snapshots(),
         builder: (context, snapshot) {
-          if(snapshot.hasData){
+          if (snapshot.hasData) {
             final List<GroupModel> unfilteredGroupList =
-            GroupModel(memberList: [])
-                .dataListFromSnapshots(snapshot.data!.docs);
-            final List<GroupModel> filteredGroupList =
-            unfilteredGroupList.where((group) {
-              final bool isGenderSame =
-                  group.leader!.gender == currentUser.gender!;
-              final bool isFull = group.memberList.length == group.capacity!;
-              //그룹에 들어가지 않으면 currentGorup.capacity == null임 그때 접근해서 null Error발생했던 것
-              final bool? isCapacitySame = group.capacity ==
-                  currentGroup.capacity;
-              final bool userJoinedGroup = currentUser.joinedGroupName != '';
-              if(userJoinedGroup) return (!isGenderSame && isFull && isCapacitySame!);
-              return (isGenderSame && !isFull);
-            }).toList();
+                GroupModel(memberList: [])
+                    .dataListFromSnapshots(snapshot.data!.docs);
+            final filteredGroupList =
+                filterGroupList(unfilteredGroupList, userJoinedGroup);
+            if (filteredGroupList.isEmpty)
+              return Center(child: Text('조건에 맞는 그룹이 없어요 ㅠㅠ'));
+
             return GridView.builder(
                 itemCount: filteredGroupList.length,
                 shrinkWrap: true,
@@ -183,12 +197,43 @@ class _HomePageState extends State<HomePage> {
                 });
           }
           return const Center(child: CircularProgressIndicator());
-        }
+        });
+  }
+
+  GestureDetector createCard(GroupModel group) {
+    return GestureDetector(
+      onLongPress: () => getCustomDialog(
+          group, currentUserController.user.value.joinedGroupGk != ''),
+      child: Card(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        child: Stack(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(group.name!,
+                      style: const TextStyle(
+                          fontSize: 18.0, fontWeight: FontWeight.bold)),
+                  const SizedBox(
+                    height: 16.0,
+                  ),
+                  Expanded(
+                      child: Text(group.leader!.name!,
+                          overflow: TextOverflow.fade)),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
   ToggleButtons searchOrCreateGroupButton() {
-    var _size = MediaQuery.of(context).size;
+    var _size = Get.size;
     return ToggleButtons(
       color: Colors.black.withOpacity(0.60),
       selectedColor: Color(0xFF86D58E),
@@ -225,49 +270,8 @@ class _HomePageState extends State<HomePage> {
       ],
     );
   }
-  GestureDetector createCard(GroupModel group){
-    return GestureDetector(
-      onLongPress: () => Get.defaultDialog(
-        title : group.name!,
-        middleText: group.leader!.name!,
-      ),
-      child: Card(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        child: Stack(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(group.name!,
-                      style: const TextStyle(
-                          fontSize: 18.0, fontWeight: FontWeight.bold)),
-                  const SizedBox(
-                    height: 16.0,
-                  ),
-                  Expanded(
-                      child: Text(group.leader!.name!,
-                          overflow: TextOverflow.fade)),
-                ],
-              ),
-            ),
-            //그룹에 들어갔을 떄만 띄워주기
-            currentUserController.user.value.joinedGroupName != '' ?
-            Positioned(
-              bottom: 10,
-              right: 10,
-              child: LikeButton(
-                onTap: currentUserController.sendLike,
-              ),
-            ) : SizedBox(),
-          ],
-        ),
-      ),
-    );
-  }
 
+  //다이얼로그 & 바텀시트
   void exitCheckDialog() {
     Get.defaultDialog(
       title: '정말 나가시겠습니까?',
@@ -282,34 +286,39 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Future<void> exitGroup() async{
+  Future<void> exitGroup() async {
     UserModel currentUser = currentUserController.user.value;
     GroupModel currentGroup = currentGroupController.group.value;
-    print('${currentGroupController.group.value.name}');
-    print('${currentGroup.leader!.pk}');
-    print('${currentUser.pk}');
-    print('${currentUser.joinedGroupName}');
 
     if (currentGroup.leader!.pk == currentUser.pk) {
-      await f.collection('GROUPS').doc(currentUser.joinedGroupName).delete();
+      await f.collection('GROUPS').doc(currentUser.joinedGroupGk).delete();
       currentGroup.memberList.forEach((member) {
-        f.collection('USERS').doc(member.pk).update({'joinedGroupName': ''});
+        f.collection('USERS').doc(member.pk).update({'joinedGroupGk': ''});
       });
     } else {
-      List<UserModel> newMemberList = currentGroup.memberList.where((member) => member.pk != currentUser.pk).toList();
+      List<UserModel> newMemberList = currentGroup.memberList
+          .where((member) => member.pk != currentUser.pk)
+          .toList();
       currentGroupController.updateCurrentGroupMemberList(newMemberList);
-      await f.collection('GROUPS').doc(currentGroup.name).update(
-          {'memberList': currentGroup.memberList.map((e) => e.toJson()).toList()});
-      await f.collection('USERS').doc(currentUser.pk).update({'joinedGroupName': ''});
+      await f.collection('GROUPS').doc(currentGroup.gk).update({
+        'memberList': currentGroup.memberList.map((e) => e.toJson()).toList()
+      });
+      await f
+          .collection('USERS')
+          .doc(currentUser.pk)
+          .update({'joinedGroupGk': ''});
     }
     currentGroupController.updateCurrentGroup(GroupModel(memberList: []));
-    currentUserController.updateJoinedGroupName('');
+    currentUserController.updateJoinedGroupGk('');
     Get.back();
   }
 
   void openBottomSheet(String goal, Size size) {
-    Map<String, Widget>showWidgetData = {'search': SearchGroupPage(), 'create': CreateGroupPage(), 'likes': Container()};
-    Map<String, String>showTextData = {'search' : '방 찾기!', 'create' : '방 만들기!', 'likes' : '받은 하트'};
+    Map<String, Widget> showWidgetData = {
+      'search': SearchGroupPage(),
+      'create': CreateGroupPage()
+    };
+    Map<String, String> showTextData = {'search': '방 찾기!', 'create': '방 만들기!'};
     Get.bottomSheet(
       SizedBox(
         height: size.height * 0.8,
@@ -345,5 +354,123 @@ class _HomePageState extends State<HomePage> {
       isScrollControlled: true,
       enableDrag: true,
     );
+  }
+
+  void getCustomDialog(GroupModel group, bool userJoinedGroup) {
+    //join Button
+    if (!userJoinedGroup) {
+      Get.defaultDialog(
+        title: group.name!,
+        content: Column(
+          children: [
+            Text('최대 인원 : ${group.capacity!.toString()}'),
+            Text('방장 : ${group.leader!.name!}'),
+            Text('전공 : ${group.leader!.major!}'),
+            Text('학번 : ${group.leader!.entranceYear.toString()}'),
+          ],
+        ),
+        confirm: OutlinedButton(
+          child: Text('Join!'),
+          onPressed: () => joinGroup(group),
+        ),
+      );
+    }
+    ///sendLike Button -> 리스트에서 팝해서 1에 넣기
+    else if (_currentNavBarIndex == 0) {
+      Get.defaultDialog(
+        title: group.name!,
+        content: Column(
+          children: [
+            Text('최대 인원 : ${group.capacity!.toString()}'),
+            Text('방장 : ${group.leader!.name!}'),
+            Text('전공 : ${group.leader!.major!}'),
+            Text('학번 : ${group.leader!.entranceYear.toString()}'),
+          ],
+        ),
+        confirm: OutlinedButton(
+          child: Text('Like!'),
+          onPressed: (){
+            currentGroupController.sendLike(group);
+            Get.back();
+          },
+        ),
+      );
+    }
+    ///cancel Button -> 리스트에서 팝해서 다시 0에 넣기 & currentGroupController.sendLike기능 넣기
+    else if (_currentNavBarIndex == 1) {
+      Get.defaultDialog(
+        title: group.name!,
+        content: Column(
+          children: [
+            Text('최대 인원 : ${group.capacity!.toString()}'),
+            Text('방장 : ${group.leader!.name!}'),
+            Text('전공 : ${group.leader!.major!}'),
+            Text('학번 : ${group.leader!.entranceYear.toString()}'),
+          ],
+        ),
+        confirm: OutlinedButton(
+          child: Text('Cancel!'),
+          onPressed: (){
+            currentGroupController.cancelLike(group);
+            Get.back();
+          },
+        ),
+      );
+    }
+    ///수락, 거절하기 & 리더만 볼 수 있게끔...
+    else {
+      Get.defaultDialog(
+        title: group.name!,
+        content: Column(
+          children: [
+            Text('최대 인원 : ${group.capacity!.toString()}'),
+            Text('방장 : ${group.leader!.name!}'),
+            Text('전공 : ${group.leader!.major!}'),
+            Text('학번 : ${group.leader!.entranceYear.toString()}'),
+          ],
+        ),
+        confirm: OutlinedButton(
+          child: Text('Join!'),
+          onPressed: () => (){},
+        ),
+      );
+    }
+  }
+  //그룹 필터
+  List<GroupModel> filterGroupList(
+      List<GroupModel> unfilteredGroupList, bool userJoinedGroup) {
+    final UserModel currentUser = currentUserController.user.value;
+    final GroupModel currentGroup = currentGroupController.group.value;
+
+    if (!userJoinedGroup) {
+      return unfilteredGroupList.where((group) {
+        final bool isGenderSame = group.leader!.gender == currentUser.gender!;
+        final bool isFull = group.memberList.length == group.capacity!;
+        return (isGenderSame && !isFull);
+      }).toList();
+    }
+    //match -> likes sent & likes got 제외하고 넣어야 함
+    else if (_currentNavBarIndex == 0) {
+      return unfilteredGroupList.where((group) {
+        final bool isGenderSame = group.leader!.gender == currentUser.gender!;
+        final bool isFull = group.memberList.length == group.capacity!;
+        final bool? isCapacitySame = group.capacity == currentGroup.capacity;
+        final bool isLikeSent = currentGroup.likesSent.contains(group.gk);
+        final bool isLikeGot = currentGroup.likesGot.contains(group.gk);
+        return (!isGenderSame && isFull && isCapacitySame! && !isLikeSent && !isLikeGot);
+      }).toList();
+    }
+    //likes sent
+    else if (_currentNavBarIndex == 1) {
+      return unfilteredGroupList.where((group){
+        return currentGroup.likesSent.contains(group.gk);
+      }).toList();
+    }
+    //likes got
+    else {
+      return unfilteredGroupList.where((group){
+        return currentGroup.likesGot.contains(group.gk);
+      }).toList();
+    }
   }
 }

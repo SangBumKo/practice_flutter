@@ -7,6 +7,7 @@ import 'package:get/get.dart';
 import '../../controllers/CurrentUserController.dart';
 import '../../models/UserModel.dart';
 import '../../controllers/CurrentGroupController.dart';
+import 'package:uuid/uuid.dart';
 
 class CreateGroupPage extends StatefulWidget {
   const CreateGroupPage({Key? key}) : super(key: key);
@@ -18,6 +19,7 @@ class CreateGroupPage extends StatefulWidget {
 class _CreateGroupPageState extends State<CreateGroupPage> {
   final f = FirebaseFirestore.instance;
   final _auth = FirebaseAuth.instance;
+  final uuid = Uuid();
   CurrentUserController currentUserController = Get.put(CurrentUserController(), permanent: true);
   CurrentGroupController currentGroupController = Get.put(CurrentGroupController(), permanent: true);
 
@@ -93,31 +95,19 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
   Future createGroup() async {
     final userDocument = await f.collection('USERS').doc(_auth.currentUser!.uid).get();
     final user = UserModel.fromSnapshot(userDocument);
-    user.joinedGroupName = _groupNameTextEditController.text;
-    await f.collection('USERS').doc(user.pk).update({'joinedGroupName' : user.joinedGroupName});
+
     GroupModel newGroup =  GroupModel(
+        gk: uuid.v1(),
         name: _groupNameTextEditController.text,
         capacity: int.parse(_capacityInputController.text),
         leader: user,
         memberList: [user]);
-    await f.collection('GROUPS').doc(_groupNameTextEditController.text).set(newGroup.toJson());
+
+    user.joinedGroupGk = newGroup.gk!;
+    await f.collection('USERS').doc(user.pk).update({'joinedGroupGk' : user.joinedGroupGk});
+    await f.collection('GROUPS').doc(newGroup.gk!).set(newGroup.toJson());
+
     currentGroupController.updateCurrentGroup(newGroup);
-    currentUserController.updateJoinedGroupName(newGroup.name!);
-  }
-
-  Widget groupNameCheckButton(String str) {
-    return ElevatedButton(
-      child: const Text('중복확인'),
-      onPressed: () {
-        isGroupNameOccupied(str);
-      },
-    );
-  }
-
-  Future<bool> isGroupNameOccupied(String str) async {
-    var _groupName =
-    await f.collection('GROUPS').where('name', isEqualTo: str).get();
-    if (_groupName.size > 0) return true;
-    return false;
+    currentUserController.updateJoinedGroupGk(newGroup.gk!);
   }
 }
