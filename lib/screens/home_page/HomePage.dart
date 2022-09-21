@@ -95,8 +95,7 @@ class _HomePageState extends State<HomePage> {
   Scaffold outOfGroup() {
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-            "Do You Like?"),
+        title: Text("Do You Like?"),
         backgroundColor: const Color(0xFF86D58E),
       ),
       body: Stack(children: [
@@ -206,6 +205,7 @@ class _HomePageState extends State<HomePage> {
           group, currentUserController.user.value.joinedGroupGk != ''),
       child: Card(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        color: group.isFreezed ? Colors.lightBlueAccent : Colors.white,
         child: Stack(
           children: [
             Padding(
@@ -291,6 +291,7 @@ class _HomePageState extends State<HomePage> {
     GroupModel currentGroup = currentGroupController.group.value;
 
     if (currentGroup.leader!.pk == currentUser.pk) {
+      await currentGroupController.clearLikesBeforeBomb();
       await f.collection('GROUPS').doc(currentUser.joinedGroupGk).delete();
       currentGroup.memberList.forEach((member) {
         f.collection('USERS').doc(member.pk).update({'joinedGroupGk': ''});
@@ -357,7 +358,11 @@ class _HomePageState extends State<HomePage> {
   }
 
   void getCustomDialog(GroupModel group, bool userJoinedGroup) {
-    //join Button
+    final bool isLeader = currentGroupController.group.value.leader!.pk ==
+        currentUserController.user.value.pk;
+    final bool isCurrentGroupFull =
+        currentGroupController.group.value.memberList.length ==
+            currentGroupController.group.value.capacity;
     if (!userJoinedGroup) {
       Get.defaultDialog(
         title: group.name!,
@@ -375,7 +380,8 @@ class _HomePageState extends State<HomePage> {
         ),
       );
     }
-    ///sendLike Button -> 리스트에서 팝해서 1에 넣기
+
+    ///sendLike Button
     else if (_currentNavBarIndex == 0) {
       Get.defaultDialog(
         title: group.name!,
@@ -389,14 +395,15 @@ class _HomePageState extends State<HomePage> {
         ),
         confirm: OutlinedButton(
           child: Text('Like!'),
-          onPressed: (){
+          onPressed: () {
             currentGroupController.sendLike(group);
             Get.back();
           },
         ),
       );
     }
-    ///cancel Button -> 리스트에서 팝해서 다시 0에 넣기 & currentGroupController.sendLike기능 넣기
+
+    ///cancel Button
     else if (_currentNavBarIndex == 1) {
       Get.defaultDialog(
         title: group.name!,
@@ -410,15 +417,13 @@ class _HomePageState extends State<HomePage> {
         ),
         confirm: OutlinedButton(
           child: Text('Cancel!'),
-          onPressed: (){
+          onPressed: () {
             currentGroupController.cancelLike(group);
             Get.back();
           },
         ),
       );
-    }
-    ///수락, 거절하기 & 리더만 볼 수 있게끔...
-    else {
+    } else {
       Get.defaultDialog(
         title: group.name!,
         content: Column(
@@ -429,13 +434,32 @@ class _HomePageState extends State<HomePage> {
             Text('학번 : ${group.leader!.entranceYear.toString()}'),
           ],
         ),
-        confirm: OutlinedButton(
-          child: Text('Join!'),
-          onPressed: () => (){},
+        confirm: Visibility(
+          visible: isLeader,
+          child: group.isFreezed
+              ? OutlinedButton(
+                  child: Text('Freezed!'),
+                  onPressed: () {},
+                )
+              : OutlinedButton(
+                  child: Text('Accept!'),
+                  onPressed: () {
+                    currentGroupController.acceptLike(group);
+                    Get.back();
+                  },
+                ),
+        ),
+        cancel: OutlinedButton(
+          child: Text('Deny!'),
+          onPressed: () {
+            currentGroupController.denyLike(group);
+            Get.back();
+          },
         ),
       );
     }
   }
+
   //그룹 필터
   List<GroupModel> filterGroupList(
       List<GroupModel> unfilteredGroupList, bool userJoinedGroup) {
@@ -457,18 +481,22 @@ class _HomePageState extends State<HomePage> {
         final bool? isCapacitySame = group.capacity == currentGroup.capacity;
         final bool isLikeSent = currentGroup.likesSent.contains(group.gk);
         final bool isLikeGot = currentGroup.likesGot.contains(group.gk);
-        return (!isGenderSame && isFull && isCapacitySame! && !isLikeSent && !isLikeGot);
+        return (!isGenderSame &&
+            isFull &&
+            isCapacitySame! &&
+            !isLikeSent &&
+            !isLikeGot);
       }).toList();
     }
     //likes sent
     else if (_currentNavBarIndex == 1) {
-      return unfilteredGroupList.where((group){
+      return unfilteredGroupList.where((group) {
         return currentGroup.likesSent.contains(group.gk);
       }).toList();
     }
     //likes got
     else {
-      return unfilteredGroupList.where((group){
+      return unfilteredGroupList.where((group) {
         return currentGroup.likesGot.contains(group.gk);
       }).toList();
     }

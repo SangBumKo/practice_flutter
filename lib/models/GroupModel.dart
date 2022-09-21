@@ -6,6 +6,7 @@ class GroupModel {
   String? name;
   int? capacity;
   UserModel? leader;
+  bool isFreezed = false;
   List<UserModel> memberList = [];
   List<String> likesSent = [];
   List<String> likesGot = [];
@@ -19,6 +20,7 @@ class GroupModel {
     name = json['name'];
     capacity = json['capacity'];
     leader = UserModel.fromdynamic(json['leader']);
+    isFreezed = json['isFreezed'];
     memberList = (json['memberList'] as List).map((e) => UserModel.fromdynamic(e)).toList();
     likesSent = (json['likesSent'] as List).map((e) => e.toString()).toList();
     likesGot = (json['likesGot'] as List).map((e) => e.toString()).toList();
@@ -55,6 +57,7 @@ class GroupModel {
       'name': name,
       'capacity': capacity,
       'leader': leader!.toJson(),
+      'isFreezed' : isFreezed,
       'memberList': memberList.map((e) => e.toJson()).toList(),
       'likesSent' : likesSent,
       'likesGot' : likesGot,

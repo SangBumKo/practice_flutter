@@ -30,6 +30,20 @@ class CurrentGroupController extends GetxService{
     _group.value.memberList = memberList;
   }
 
+  void freezeGroups(GroupModel targetGroup){
+    targetGroup.isFreezed = true;
+    _group.value.isFreezed = true;
+    f.collection('GROUPS').doc(_group.value.gk).update({'isFreezed' : _group.value.isFreezed});
+    f.collection('GROUPS').doc(targetGroup.gk).update({'isFreezed' : targetGroup.isFreezed});
+  }
+
+  void unfreezeGroups(GroupModel targetGroup){
+    targetGroup.isFreezed = false;
+    _group.value.isFreezed = false;
+    f.collection('GROUPS').doc(_group.value.gk).update({'isFreezed' : _group.value.isFreezed});
+    f.collection('GROUPS').doc(targetGroup.gk).update({'isFreezed' : targetGroup.isFreezed});
+  }
+
   void sendLike(GroupModel targetGroup){
     _group.value.likesSent.add(targetGroup.gk!);
     targetGroup.likesGot.add(_group.value.gk!);
@@ -50,7 +64,31 @@ class CurrentGroupController extends GetxService{
   }
 
   void denyLike(GroupModel targetGroup){
-    //group -> likesGot
-    //targetGroup
+    _group.value.likesGot.remove(targetGroup.gk!);
+    targetGroup.likesSent.remove(_group.value.gk!);
+
+    f.collection('GROUPS').doc(_group.value.gk).update({'likesGot' : _group.value.likesGot});
+    f.collection('GROUPS').doc(targetGroup.gk).update({'likesSent' : targetGroup.likesSent});
+  }
+
+  Future<void> clearLikesBeforeBomb() async{
+    //if(isLeader) => currentGroupController.clearLikesBeforeBomb -> exitGroup
+    //1. 내가 보낸 모든 좋아요 cancel
+    _group.value.likesSent.forEach(
+        (gk)async{
+          DocumentSnapshot<Map<String, dynamic>> documentSnapshot = await f.collection('GROUPS').doc(gk).get();
+          GroupModel targetGroup = GroupModel.fromSnapshot(documentSnapshot);
+          cancelLike(targetGroup);
+        }
+    );
+    //2. 내가 받은 모든 좋아요 deny
+    _group.value.likesGot.forEach(
+            (gk)async{
+          DocumentSnapshot<Map<String, dynamic>> documentSnapshot = await f.collection('GROUPS').doc(gk).get();
+          GroupModel targetGroup = GroupModel.fromSnapshot(documentSnapshot);
+          denyLike(targetGroup);
+        }
+    );
+    //3. 그룹 폭파시키기
   }
 }
