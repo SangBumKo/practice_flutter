@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 class UserModel{
   String joinedGroupGk = '';
+  String? chattingRoomKey;
   String? pk;
   String? name;
   String? password;
@@ -19,7 +20,8 @@ class UserModel{
         entranceYear = json['entranceYear'],
         gender = json['gender'],
         email = json['email'],
-        joinedGroupGk = json['joinedGroupGk'];
+        joinedGroupGk = json['joinedGroupGk'],
+        chattingRoomKey = json['chattingRoomKey'];
 
   UserModel.fromJson(Map<String, dynamic> json) {
     pk = json['pk'];
@@ -30,6 +32,7 @@ class UserModel{
     gender = json['gender'];
     email = json['email'];
     joinedGroupGk = json['joinedGroupGk'];
+    chattingRoomKey = json['chattingRoomKey'];
   }
   UserModel.fromSnapshot(DocumentSnapshot<Map<String, dynamic>> snapshot)
       : this.fromJson(snapshot.data()!);
@@ -44,6 +47,7 @@ class UserModel{
       'gender' : gender,
       'email' : email,
       'joinedGroupGk' : joinedGroupGk,
+      'chattingRoomKey' : chattingRoomKey,
     };
   }
 }

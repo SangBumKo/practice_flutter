@@ -12,9 +12,6 @@ class CurrentUserController extends GetxService{
   @override
   void onInit() async{
     super.onInit();
-    DocumentSnapshot<Map<String, dynamic>> documentSnapshot = await f.collection('USERS').doc(auth.currentUser!.uid).get();
-    updateCurrentUser(UserModel.fromSnapshot(documentSnapshot));
-    print('user init');
   }
 
   void updateCurrentUser(UserModel currentUser){
