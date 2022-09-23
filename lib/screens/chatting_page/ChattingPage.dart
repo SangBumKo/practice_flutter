@@ -2,7 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-import '../../controllers/ChattingPageController.dart';
+import '../../controllers/CurrentChattingPageController.dart';
 import '../../models/ChattingModel.dart';
 import 'local_widgets/ChattingBubble.dart';
 
@@ -14,19 +14,19 @@ class ChattingPage extends StatefulWidget {
 class _ChattingPageState extends State<ChattingPage> {
   final TextEditingController _controller = TextEditingController();
   StreamSubscription? _streamSubscription;
-  ChattingPageController chattingPageController = Get.put(ChattingPageController(), permanent: true);
+  CurrentChattingPageController currentChattingPageController = Get.put(CurrentChattingPageController(), permanent: true);
   bool firstLoad = true;
   @override
   void initState() {
-    _streamSubscription = chattingPageController.getSnapshot().listen((event) {
+    _streamSubscription = currentChattingPageController.getSnapshot().listen((event) {
       if(firstLoad) {
         firstLoad = false;
         return;
       }
-      chattingPageController.addOne(ChattingModel.fromJson(event.docs[0].data() as Map<String, dynamic>));
+      currentChattingPageController.addOne(ChattingModel.fromJson(event.docs[0].data() as Map<String, dynamic>));
     });
     Future.microtask(() {
-      chattingPageController.load();
+      currentChattingPageController.load();
     });
     super.initState();
   }
@@ -53,15 +53,23 @@ class _ChattingPageState extends State<ChattingPage> {
           Expanded(
             child: ListView(
               reverse: true,
-              children: chattingPageController.chattingList.value.map((e) => ChattingBubble(chattingModel: e)).toList(),
+              children: currentChattingPageController.chattingList.value.map((e) => ChattingBubble(chattingModel: e)).toList(),
             ),
           ),
+          SizedBox(height: Get.size.height * 0.02,),
           Divider(
             thickness: 1.5,
             height: 1.5,
             color: Colors.grey[300],
           ),
           Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(10),
+              color: Colors.white,
+              boxShadow: [
+                BoxShadow(color: Colors.grey, spreadRadius: 1),
+              ],
+            ),
             constraints: BoxConstraints(
                 maxHeight: Get.size.height * .5),
             margin:
@@ -87,13 +95,15 @@ class _ChattingPageState extends State<ChattingPage> {
                   onTap: (){
                     var text = _controller.text;
                     _controller.text = '';
-                    chattingPageController.send(text);
+                    currentChattingPageController.send(text);
+                    FocusScope.of(context).unfocus();
                   },
                   child: Padding(
                     padding: EdgeInsets.fromLTRB(15, 5, 15, 5),
                     child: Icon(
                       Icons.send,
                       size: 33,
+                      color: Colors.lightGreen,
                     ),
                   ),
                 )

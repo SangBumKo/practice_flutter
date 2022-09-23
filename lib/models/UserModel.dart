@@ -2,7 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 class UserModel{
   String joinedGroupGk = '';
-  String chattingRoomKey = '';
+  String? chattingRoomKey;
   String? pk;
   String? name;
   String? password;

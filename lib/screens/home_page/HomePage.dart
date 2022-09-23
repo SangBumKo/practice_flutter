@@ -2,7 +2,9 @@ import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:practice_flutter/controllers/CurrentUserController.dart';
+import 'package:practice_flutter/screens/chatting_page/ChattingPage.dart';
 import 'package:practice_flutter/screens/search_group_page/SearchGroupPage.dart';
+import '../../controllers/CurrentChattingPageController.dart';
 import '../../controllers/CurrentGroupController.dart';
 import '../../models/UserModel.dart';
 import '../../utils/Functions.dart';
@@ -21,23 +23,45 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  CurrentUserController currentUserController =
-      Get.put(CurrentUserController(), permanent: true);
-  CurrentGroupController currentGroupController =
-      Get.put(CurrentGroupController(), permanent: true);
-
   final f = FirebaseFirestore.instance;
   final _auth = FirebaseAuth.instance;
   final _isSelected = [false, false];
   late Timer _timer;
+  bool  _loading = true;
   int _currentNavBarIndex = 0;
+  final CurrentUserController currentUserController =
+      Get.put(CurrentUserController());
+  final CurrentGroupController currentGroupController =
+      Get.put(CurrentGroupController());
+  final CurrentChattingPageController currentChattingPageController =
+      Get.put(CurrentChattingPageController(), permanent: true);
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => verifyEmail());
+    WidgetsBinding.instance.addPostFrameCallback((_) async{
+      await firstUpdateController();
+      verifyEmail();
+      setState(() {
+        _loading = false;
+      });
+      if (currentUserController.user.value.chattingRoomKey != null) {
+        currentChattingPageController.updateCollectionRef(currentUserController.user.value.chattingRoomKey!);
+        Get.to(() => ChattingPage());
+      }
+    });
   }
 
+  Future firstUpdateController() async{
+    //User
+    DocumentSnapshot<Map<String, dynamic>> documentSnapshot = await f.collection('USERS').doc(_auth.currentUser!.uid).get();
+    currentUserController.user(UserModel.fromSnapshot(documentSnapshot));
+    //Group
+    if(currentUserController.user.value.joinedGroupGk != ''){
+      DocumentSnapshot<Map<String, dynamic>> documentSnapshot = await f.collection('GROUPS').doc(currentUserController.user.value.joinedGroupGk).get();
+      currentGroupController.updateCurrentGroup(GroupModel.fromSnapshot(documentSnapshot));
+    }
+  }
   Future verifyEmail() async {
     if (!_auth.currentUser!.emailVerified) {
       await Get.defaultDialog(
@@ -87,9 +111,13 @@ class _HomePageState extends State<HomePage> {
   @override
   //HomePage 구조
   Widget build(BuildContext context) {
-    return Obx(() => currentGroupController.group.value.gk == null
+    return _loading ? Center(child: CircularProgressIndicator()) : getScaffoldByGroupState();
+  }
+
+  Widget getScaffoldByGroupState() {
+    return currentGroupController.group.value.gk == null
         ? outOfGroup()
-        : inGroup());
+        : inGroup();
   }
 
   Scaffold outOfGroup() {
@@ -171,7 +199,7 @@ class _HomePageState extends State<HomePage> {
 
   //Body에 들어갈 위젯
   StreamBuilder viewGroupsList({required bool userJoinedGroup}) {
-    return StreamBuilder<QuerySnapshot>(
+   return StreamBuilder<QuerySnapshot>(
         stream: f.collection('GROUPS').snapshots(),
         builder: (context, snapshot) {
           if (snapshot.hasData) {
@@ -436,6 +464,7 @@ class _HomePageState extends State<HomePage> {
         ),
         confirm: Visibility(
           visible: isLeader,
+          ///내가 isNotFull이어도 accept x / 상대가 isNotFull이어도 accept x
           child: group.isFreezed
               ? OutlinedButton(
                   child: Text('Freezed!'),
@@ -443,8 +472,8 @@ class _HomePageState extends State<HomePage> {
                 )
               : OutlinedButton(
                   child: Text('Accept!'),
-                  onPressed: () {
-                    currentGroupController.acceptLike(group);
+                  onPressed: () async {
+                    await currentGroupController.acceptLike(group);
                     Get.back();
                   },
                 ),

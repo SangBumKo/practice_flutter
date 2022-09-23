@@ -195,7 +195,7 @@ class _SignUpPageState extends State<SignUpPage> {
 
   Future<void> storeCurrentUserData() async {
     DocumentSnapshot<Map<String, dynamic>> userData =
-        await f.collection('USERS').doc(_auth.currentUser!.uid).get();
+    await f.collection('USERS').doc(_auth.currentUser!.uid).get();
     UserModel currentUser = UserModel.fromSnapshot(userData);
     currentUserController.updateCurrentUser(currentUser);
   }

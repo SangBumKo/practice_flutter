@@ -3,18 +3,21 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/ChattingModel.dart';
 import 'CurrentUserController.dart';
 
-class ChattingPageController extends GetxService {
+class CurrentChattingPageController extends GetxService {
   CurrentUserController currentUserController =
       Get.put(CurrentUserController(), permanent: true);
-  String chattingRoomKey = '';
   late CollectionReference collectionRef;
   final chattingList = Rx<List<ChattingModel>>([]);
 
   @override
-  void onInit() async {
+  void onInit() {
     super.onInit();
+  }
+
+  void updateCollectionRef(String subCollectionPath){
     collectionRef = FirebaseFirestore.instance
-        .collection('CHATTING_ROOMS/MATCHED/$chattingRoomKey');
+        .collection('CHATTING_ROOMS').doc('MATCHED').
+    collection(subCollectionPath);
   }
 
   Stream<QuerySnapshot> getSnapshot() {
@@ -35,7 +38,6 @@ class ChattingPageController extends GetxService {
         .toList();
     chattingList.value.addAll(l);
   }
-
   Future<void> send(String text) async {
     int now = DateTime.now().millisecondsSinceEpoch;
     await collectionRef.doc(now.toString()).set(ChattingModel(

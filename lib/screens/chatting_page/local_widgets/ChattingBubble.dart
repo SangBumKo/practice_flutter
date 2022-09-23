@@ -29,7 +29,7 @@ class ChattingBubble extends StatelessWidget {
         clipper: clipper,
         alignment: Alignment.topRight,
         margin: EdgeInsets.only(top: 20),
-        backGroundColor: Colors.blue,
+        backGroundColor: Colors.lightGreen,
         child: Container(
           constraints: BoxConstraints(
             maxWidth: MediaQuery.of(context).size.width * 0.7,
@@ -43,7 +43,7 @@ class ChattingBubble extends StatelessWidget {
 
   getReceiverView(CustomClipper clipper, BuildContext context) => ChatBubble(
         clipper: clipper,
-        backGroundColor: Color(0xffE7E7ED),
+        backGroundColor: Colors.grey,
         margin: EdgeInsets.only(top: 20),
         child: Container(
           constraints: BoxConstraints(
