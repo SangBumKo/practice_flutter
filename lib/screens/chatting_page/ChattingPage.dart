@@ -11,24 +11,32 @@ class ChattingPage extends StatefulWidget {
   _ChattingPageState createState() => _ChattingPageState();
 }
 
+///들어온 순간 exitCount setting done
 class _ChattingPageState extends State<ChattingPage> {
   final TextEditingController _controller = TextEditingController();
   StreamSubscription? _streamSubscription;
   CurrentChattingPageController currentChattingPageController = Get.put(CurrentChattingPageController(), permanent: true);
   bool firstLoad = true;
+  bool _loading = true;
+
   @override
   void initState() {
-    _streamSubscription = currentChattingPageController.getSnapshot().listen((event) {
-      if(firstLoad) {
-        firstLoad = false;
-        return;
-      }
-      currentChattingPageController.addOne(ChattingModel.fromJson(event.docs[0].data() as Map<String, dynamic>));
-    });
-    Future.microtask(() {
-      currentChattingPageController.load();
-    });
     super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await currentChattingPageController.load();
+
+      _streamSubscription = currentChattingPageController.getSnapshot().listen((event) {
+        if(firstLoad) {
+          firstLoad = false;
+          return;
+        }
+        currentChattingPageController.addOne(ChattingModel.fromJson(event.docs[0].data() as Map<String, dynamic>));
+      });
+
+      setState(() {
+        _loading = false;
+      });
+    });
   }
 
   @override
@@ -39,22 +47,18 @@ class _ChattingPageState extends State<ChattingPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return _loading ? Scaffold(body: Center(child: CircularProgressIndicator())) :
+    Scaffold(
       appBar: AppBar(
-        //backgroundColor: Colors.grey[900],
-        leading: GestureDetector(
-            onTap: () {
-              Get.back();
-            },
-            child: Icon(Icons.arrow_back_ios_rounded)),
+        title: Text('Do You Like'),
       ),
       body: Column(
         children: [
           Expanded(
-            child: ListView(
+            child: Obx(() => (ListView(
               reverse: true,
               children: currentChattingPageController.chattingList.value.map((e) => ChattingBubble(chattingModel: e)).toList(),
-            ),
+            ))),
           ),
           SizedBox(height: Get.size.height * 0.02,),
           Divider(

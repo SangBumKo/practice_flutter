@@ -9,12 +9,27 @@ class CurrentChattingPageController extends GetxService {
   late CollectionReference collectionRef;
   final chattingList = Rx<List<ChattingModel>>([]);
 
+  final _exitCount = RxInt(0);
+  RxInt get exitCount => _exitCount;
+
   @override
   void onInit() {
     super.onInit();
   }
 
-  void updateCollectionRef(String subCollectionPath){
+  void updateExitCount(int newCount){
+    _exitCount(newCount);
+  }
+
+  void getExitCount(){
+    if(collectionRef == null){
+      print('collectionRef is Null');
+    }else {
+      collectionRef.doc('exitCount').get();
+    }
+  }
+
+  void fixCollectionRef(String subCollectionPath){
     collectionRef = FirebaseFirestore.instance
         .collection('CHATTING_ROOMS').doc('MATCHED').
     collection(subCollectionPath);
@@ -28,9 +43,10 @@ class CurrentChattingPageController extends GetxService {
   }
 
   Future<void> load() async {
+    ///update auto
     var now = DateTime.now().millisecondsSinceEpoch;
     var result = await collectionRef
-        .where('uploadTime', isGreaterThan: now)
+        .where('uploadTime', isLessThan: now)
         .orderBy('uploadTime', descending: true)
         .get();
     var l = result.docs
@@ -49,6 +65,7 @@ class CurrentChattingPageController extends GetxService {
   }
 
   void addOne(ChattingModel model) {
+    //update auto
     chattingList.value.insert(0, model);
   }
 }

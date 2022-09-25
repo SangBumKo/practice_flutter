@@ -107,6 +107,7 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
     await f.collection('USERS').doc(user.pk).update({'joinedGroupGk' : user.joinedGroupGk});
     await f.collection('GROUPS').doc(newGroup.gk!).set(newGroup.toJson());
 
+    //firebase update error
     currentGroupController.updateCurrentGroup(newGroup);
     currentUserController.updateJoinedGroupGk(newGroup.gk!);
   }

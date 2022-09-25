@@ -27,7 +27,7 @@ class _HomePageState extends State<HomePage> {
   final _auth = FirebaseAuth.instance;
   final _isSelected = [false, false];
   late Timer _timer;
-  bool  _loading = true;
+  bool _loading = true;
   int _currentNavBarIndex = 0;
   final CurrentUserController currentUserController =
       Get.put(CurrentUserController());
@@ -39,29 +39,39 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) async{
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
       await firstUpdateController();
       verifyEmail();
       setState(() {
         _loading = false;
       });
       if (currentUserController.user.value.chattingRoomKey != null) {
-        currentChattingPageController.updateCollectionRef(currentUserController.user.value.chattingRoomKey!);
+        currentChattingPageController.fixCollectionRef(
+            currentUserController.user.value.chattingRoomKey!);
+        // DocumentSnapshot exitCountDocumentSnapshot = await currentChattingPageController.collectionRef.doc('exitCount').get();
+        //
+        // currentChattingPageController.updateExitCount(newExitCount);
         Get.to(() => ChattingPage());
       }
     });
   }
 
-  Future firstUpdateController() async{
+  Future firstUpdateController() async {
     //User
-    DocumentSnapshot<Map<String, dynamic>> documentSnapshot = await f.collection('USERS').doc(_auth.currentUser!.uid).get();
+    DocumentSnapshot<Map<String, dynamic>> documentSnapshot =
+        await f.collection('USERS').doc(_auth.currentUser!.uid).get();
     currentUserController.user(UserModel.fromSnapshot(documentSnapshot));
     //Group
-    if(currentUserController.user.value.joinedGroupGk != ''){
-      DocumentSnapshot<Map<String, dynamic>> documentSnapshot = await f.collection('GROUPS').doc(currentUserController.user.value.joinedGroupGk).get();
-      currentGroupController.updateCurrentGroup(GroupModel.fromSnapshot(documentSnapshot));
+    if (currentUserController.user.value.joinedGroupGk != '') {
+      DocumentSnapshot<Map<String, dynamic>> documentSnapshot = await f
+          .collection('GROUPS')
+          .doc(currentUserController.user.value.joinedGroupGk)
+          .get();
+      currentGroupController
+          .updateCurrentGroup(GroupModel.fromSnapshot(documentSnapshot));
     }
   }
+
   Future verifyEmail() async {
     if (!_auth.currentUser!.emailVerified) {
       await Get.defaultDialog(
@@ -111,20 +121,23 @@ class _HomePageState extends State<HomePage> {
   @override
   //HomePage 구조
   Widget build(BuildContext context) {
-    return _loading ? Center(child: CircularProgressIndicator()) : getScaffoldByGroupState();
+    return _loading
+        ? Scaffold(body: Center(child: CircularProgressIndicator()))
+        : getScaffoldByGroupState();
   }
 
   Widget getScaffoldByGroupState() {
-    return currentGroupController.group.value.gk == null
-        ? outOfGroup()
-        : inGroup();
+    return Obx((){
+      return currentGroupController.group.value.gk == null
+          ? outOfGroup()
+          : inGroup();
+    });
   }
 
   Scaffold outOfGroup() {
     return Scaffold(
       appBar: AppBar(
-        title: Text("Do You Like?"),
-        backgroundColor: const Color(0xFF86D58E),
+        title: Text('Do You Like'),
       ),
       body: Stack(children: [
         SizedBox.expand(),
@@ -143,7 +156,7 @@ class _HomePageState extends State<HomePage> {
   Scaffold inGroup() {
     return Scaffold(
       appBar: AppBar(
-        title: Text("Do You Like?"),
+        title: Text('Do You Like'),
         actions: [
           Padding(
             padding: const EdgeInsets.all(10.0),
@@ -199,7 +212,7 @@ class _HomePageState extends State<HomePage> {
 
   //Body에 들어갈 위젯
   StreamBuilder viewGroupsList({required bool userJoinedGroup}) {
-   return StreamBuilder<QuerySnapshot>(
+    return StreamBuilder<QuerySnapshot>(
         stream: f.collection('GROUPS').snapshots(),
         builder: (context, snapshot) {
           if (snapshot.hasData) {
@@ -233,7 +246,7 @@ class _HomePageState extends State<HomePage> {
           group, currentUserController.user.value.joinedGroupGk != ''),
       child: Card(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        color: group.isFreezed ? Colors.lightBlueAccent : Colors.white,
+        color: Colors.white,
         child: Stack(
           children: [
             Padding(
@@ -243,17 +256,36 @@ class _HomePageState extends State<HomePage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(group.name!,
-                      style: const TextStyle(
-                          fontSize: 18.0, fontWeight: FontWeight.bold)),
+                      style: TextStyle(
+                          color: group.isFreezed
+                              ? Colors.black
+                              : Colors.black,
+                          fontSize: 18.0,
+                          fontWeight: FontWeight.bold)),
                   const SizedBox(
                     height: 16.0,
                   ),
                   Expanded(
-                      child: Text(group.leader!.name!,
-                          overflow: TextOverflow.fade)),
+                    child: Text(group.leader!.name!,
+                        overflow: TextOverflow.fade,
+                        style: TextStyle(
+                          color: group.isFreezed
+                              ? Colors.black
+                              : Colors.black,
+                        )),
+                  ),
                 ],
               ),
             ),
+            group.isFreezed ?
+            Positioned(
+              bottom : 10,
+              right: 10,
+              child: Text('FREEZE',
+                  style: TextStyle(
+                      color: Colors.lightBlueAccent,
+                      fontSize: 12.0,
+                      fontWeight: FontWeight.bold))) : SizedBox(height: 0, width: 0,),
           ],
         ),
       ),
@@ -386,11 +418,12 @@ class _HomePageState extends State<HomePage> {
   }
 
   void getCustomDialog(GroupModel group, bool userJoinedGroup) {
-    final bool isLeader = currentGroupController.group.value.leader!.pk ==
-        currentUserController.user.value.pk;
-    final bool isCurrentGroupFull =
-        currentGroupController.group.value.memberList.length ==
-            currentGroupController.group.value.capacity;
+    final bool isLeader = userJoinedGroup ? currentGroupController.group.value.leader!.pk ==
+        currentUserController.user.value.pk : false;
+    // final bool isCurrentGroupFull =
+    //     currentGroupController.group.value.memberList.length ==
+    //         currentGroupController.group.value.capacity;
+    // final bool isTargetGroupFull = group.memberList.length == group.capacity;
     if (!userJoinedGroup) {
       Get.defaultDialog(
         title: group.name!,
@@ -464,17 +497,17 @@ class _HomePageState extends State<HomePage> {
         ),
         confirm: Visibility(
           visible: isLeader,
+
           ///내가 isNotFull이어도 accept x / 상대가 isNotFull이어도 accept x
           child: group.isFreezed
               ? OutlinedButton(
-                  child: Text('Freezed!'),
+                  child: Text('Freezed Or isNotFull!'),
                   onPressed: () {},
                 )
               : OutlinedButton(
                   child: Text('Accept!'),
                   onPressed: () async {
                     await currentGroupController.acceptLike(group);
-                    Get.back();
                   },
                 ),
         ),

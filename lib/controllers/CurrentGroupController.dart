@@ -89,7 +89,6 @@ class CurrentGroupController extends GetxService {
   }
 
   Future<void> acceptLike(GroupModel targetGroup) async {
-    try {
       _group.value.likesGot.remove(targetGroup.gk);
       targetGroup.likesSent.remove(_group.value.gk);
       await f
@@ -100,7 +99,7 @@ class CurrentGroupController extends GetxService {
           .collection('GROUPS')
           .doc(targetGroup.gk)
           .update({'likesSent': targetGroup.likesSent});
-      //db에 업로드하기
+
       String chattingRoomKey = uuid.v1();
       currentUserController.user.value.chattingRoomKey = chattingRoomKey;
       _group.value.memberList.forEach((member) async {
@@ -139,11 +138,9 @@ class CurrentGroupController extends GetxService {
 
       freezeGroups(targetGroup);
       Get.back();
+      currentChattingPageController.fixCollectionRef(chattingRoomKey);
+      // await currentChattingPageController.collectionRef.doc('exitCount').set({'exitCount' : 0});
       Get.to(() => ChattingPage());
-      currentChattingPageController.updateCollectionRef(chattingRoomKey);
-    } catch (e) {
-      Get.snackbar('Error!', '${e.toString()}오류가 발생했어요');
-    }
   }
 
   void denyLike(GroupModel targetGroup) {
