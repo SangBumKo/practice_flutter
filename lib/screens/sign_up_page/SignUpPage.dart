@@ -31,7 +31,7 @@ class _SignUpPageState extends State<SignUpPage> {
     '21',
     '22',
   ];
-  final List<String> _universityEmailList = ['syuin.ac.kr'];
+  final List<String> _universityEmailList = ['@syuin.ac.kr'];
   final TextEditingController _universityEmailController =
       TextEditingController();
   final TextEditingController _genderController = TextEditingController();
@@ -71,7 +71,14 @@ class _SignUpPageState extends State<SignUpPage> {
                         ),
                         const SizedBox(width: 5.0),
                         createCustomOutlinedButton(
-                            childText: '중복확인', onPressed: () {}),
+                            childText: '중복확인', onPressed: () async {
+                              if(await checkNicknameAvailable(_nicknameController.text)){
+                                Get.snackbar('통과', 'ok!', snackPosition: SnackPosition.BOTTOM);
+                              }
+                              else{
+                                Get.snackbar('에러', '다른 닉네임을 입력해주세요!', snackPosition: SnackPosition.BOTTOM);
+                              }
+                        }),
                       ],
                     ),
                     const SizedBox(height: 15.0),
@@ -118,9 +125,26 @@ class _SignUpPageState extends State<SignUpPage> {
                         isSearchable: false),
                     const SizedBox(height: 15.0),
                     createCustomOutlinedButton(
-                      childText: '회원가입!',
-                      onPressed: () => createUserAndUserData(),
-                    ),
+                        childText: '회원가입!',
+                        onPressed: () async {
+                          if(!await checkNicknameAvailable(_nicknameController.text)){
+                            Get.snackbar('닉네임이 사용중입니다.', '새로운 닉네임을 입력해주세요!',
+                            snackPosition: SnackPosition.BOTTOM);
+                          }
+                          else if (_nicknameController.text == '' ||
+                              _emailController.text == '' ||
+                              _passwordController.text == '' ||
+                              _majorController.text == '' ||
+                              _genderController.text == '' ||
+                              _entranceYearController.text == '' ||
+                              _universityEmailController.text == '') {
+                            Get.snackbar(
+                                '정보를 채워주세요!', '회원가입란의 정보를 다 채워야 회원가입이 완료됩니다:)',
+                                snackPosition: SnackPosition.BOTTOM);
+                          } else {
+                            createUserAndUserData();
+                          }
+                        }),
                   ]),
                 ),
               )
@@ -196,9 +220,14 @@ class _SignUpPageState extends State<SignUpPage> {
   }
 
   void createUserAndUserData() async {
-    await _auth.createUserWithEmailAndPassword(
-        email: _emailController.text + '@syuin.ac.kr',
-        password: _passwordController.text);
+    try {
+      await _auth.createUserWithEmailAndPassword(
+          email: _emailController.text + _universityEmailController.text,
+          password: _passwordController.text);
+    } on FirebaseAuthException catch (e) {
+      Get.snackbar('ERROR', e.message.toString(),
+          snackPosition: SnackPosition.BOTTOM);
+    }
 
     await f.collection('USERS').doc(_auth.currentUser!.uid).set(UserModel(
           pk: _auth.currentUser!.uid,
@@ -207,7 +236,7 @@ class _SignUpPageState extends State<SignUpPage> {
           major: _majorController.text,
           entranceYear: int.parse(_entranceYearController.text),
           gender: _genderController.text,
-          email: _emailController.text + '@syuin.ac.kr',
+          email: _emailController.text + _universityEmailController.text,
         ).toJson());
     await storeCurrentUserData();
   }
@@ -217,5 +246,11 @@ class _SignUpPageState extends State<SignUpPage> {
         await f.collection('USERS').doc(_auth.currentUser!.uid).get();
     UserModel currentUser = UserModel.fromSnapshot(userData);
     currentUserController.updateCurrentUser(currentUser);
+  }
+
+  Future<bool> checkNicknameAvailable(String nickname) async {
+    QuerySnapshot usersWithSameNickname = await f.collection('USERS').where('name', isEqualTo : nickname).get();
+    if(usersWithSameNickname.size == 0) return true;
+    return false;
   }
 }
