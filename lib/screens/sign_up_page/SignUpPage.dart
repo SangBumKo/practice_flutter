@@ -16,7 +16,8 @@ class SignUpPage extends StatefulWidget {
 class _SignUpPageState extends State<SignUpPage> {
   final f = FirebaseFirestore.instance;
   final _auth = FirebaseAuth.instance;
-  CurrentUserController currentUserController = Get.put(CurrentUserController(), permanent: true);
+  CurrentUserController currentUserController =
+      Get.put(CurrentUserController(), permanent: true);
 
   final List<String> _genderList = ['남자', '여자'];
   final List<String> _majorList = ['컴퓨터공학과', 'IT융합공학과', '유아교육과'];
@@ -30,6 +31,9 @@ class _SignUpPageState extends State<SignUpPage> {
     '21',
     '22',
   ];
+  final List<String> _universityEmailList = ['syuin.ac.kr'];
+  final TextEditingController _universityEmailController =
+      TextEditingController();
   final TextEditingController _genderController = TextEditingController();
   final TextEditingController _majorController = TextEditingController();
   final TextEditingController _entranceYearController = TextEditingController();
@@ -71,10 +75,24 @@ class _SignUpPageState extends State<SignUpPage> {
                       ],
                     ),
                     const SizedBox(height: 15.0),
-                    createCustomTextFormField(
-                        controller: _emailController,
-                        guideText: '학교이메일을 입력하세요',
-                        keyboardType: TextInputType.emailAddress),
+                    Row(
+                      children: [
+                        Expanded(
+                          flex: 5,
+                          child: createCustomTextFormField(
+                              controller: _emailController,
+                              guideText: '학교이메일 입력',
+                              keyboardType: TextInputType.emailAddress),
+                        ),
+                        Expanded(
+                            flex: 5,
+                            child: createCustomDropdown(
+                                hintText: '학교선택!',
+                                items: _universityEmailList,
+                                controller: _universityEmailController,
+                                isSearchable: true)),
+                      ],
+                    ),
                     const SizedBox(height: 15.0),
                     createCustomTextFormField(
                         controller: _passwordController,
@@ -179,7 +197,8 @@ class _SignUpPageState extends State<SignUpPage> {
 
   void createUserAndUserData() async {
     await _auth.createUserWithEmailAndPassword(
-        email: _emailController.text, password: _passwordController.text);
+        email: _emailController.text + '@syuin.ac.kr',
+        password: _passwordController.text);
 
     await f.collection('USERS').doc(_auth.currentUser!.uid).set(UserModel(
           pk: _auth.currentUser!.uid,
@@ -188,14 +207,14 @@ class _SignUpPageState extends State<SignUpPage> {
           major: _majorController.text,
           entranceYear: int.parse(_entranceYearController.text),
           gender: _genderController.text,
-          email: _emailController.text,
+          email: _emailController.text + '@syuin.ac.kr',
         ).toJson());
     await storeCurrentUserData();
   }
 
   Future<void> storeCurrentUserData() async {
     DocumentSnapshot<Map<String, dynamic>> userData =
-    await f.collection('USERS').doc(_auth.currentUser!.uid).get();
+        await f.collection('USERS').doc(_auth.currentUser!.uid).get();
     UserModel currentUser = UserModel.fromSnapshot(userData);
     currentUserController.updateCurrentUser(currentUser);
   }

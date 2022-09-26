@@ -45,9 +45,9 @@ class _HomePageState extends State<HomePage> {
       setState(() {
         _loading = false;
       });
-      if (currentUserController.user.value.chattingRoomKey != null) {
+      if (currentUserController.user.value.chattingRoomKey != '') {
         currentChattingPageController.fixCollectionRef(
-            currentUserController.user.value.chattingRoomKey!);
+            currentUserController.user.value.chattingRoomKey);
         // DocumentSnapshot exitCountDocumentSnapshot = await currentChattingPageController.collectionRef.doc('exitCount').get();
         //
         // currentChattingPageController.updateExitCount(newExitCount);

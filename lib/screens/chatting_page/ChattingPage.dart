@@ -45,6 +45,13 @@ class _ChattingPageState extends State<ChattingPage> {
     super.dispose();
   }
 
+  // targetGroup / targetGroup의 데이터 전부필요
+  // 1. 채팅룸 컬렉션지우고
+  // 2. unfreeze시키고
+  // 3. leader, memberList, user전부 chattingRoomKey없애야함
+  // 4. HomePage로 강제이동
+
+
   @override
   Widget build(BuildContext context) {
     return _loading ? Scaffold(body: Center(child: CircularProgressIndicator())) :
@@ -82,17 +89,17 @@ class _ChattingPageState extends State<ChattingPage> {
               children: [
                 Expanded(
                   child: Padding(
-                    padding: EdgeInsets.fromLTRB(15, 5, 15, 5),
-                    child: TextField(
-                      controller: _controller,
-                      maxLines: null,
-                      keyboardType: TextInputType.multiline,
-                      style: TextStyle(fontSize: 27),
-                      decoration: InputDecoration(
-                          border: InputBorder.none,
-                          hintText: '텍스트 입력',
-                          hintStyle: TextStyle(color: Colors.grey[400])),
-                    ),
+                    padding: EdgeInsets.fromLTRB(15, 3, 15, 3),
+                      child: TextField(
+                        controller: _controller,
+                        maxLines: null,
+                        keyboardType: TextInputType.multiline,
+                        style: TextStyle(fontSize: 20),
+                        decoration: InputDecoration(
+                            border: InputBorder.none,
+                            hintText: '텍스트 입력',
+                            hintStyle: TextStyle(color: Colors.grey[400])),
+                      ),
                   ),
                 ),
                 GestureDetector(
@@ -106,7 +113,7 @@ class _ChattingPageState extends State<ChattingPage> {
                     padding: EdgeInsets.fromLTRB(15, 5, 15, 5),
                     child: Icon(
                       Icons.send,
-                      size: 33,
+                      size: 25,
                       color: Colors.lightGreen,
                     ),
                   ),

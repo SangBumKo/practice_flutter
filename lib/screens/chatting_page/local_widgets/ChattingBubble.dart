@@ -10,10 +10,9 @@ import '../../../models/ChattingModel.dart';
 class ChattingBubble extends StatelessWidget {
   final ChattingModel chattingModel;
   CurrentUserController currentUserController =
-  Get.put(CurrentUserController(), permanent: true);
+      Get.put(CurrentUserController(), permanent: true);
 
-  ChattingBubble({Key? key, required this.chattingModel})
-      : super(key: key);
+  ChattingBubble({Key? key, required this.chattingModel}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -25,34 +24,53 @@ class ChattingBubble extends StatelessWidget {
             ChatBubbleClipper4(type: BubbleType.receiverBubble), context);
   }
 
-  getSenderView(CustomClipper clipper, BuildContext context) => ChatBubble(
-        clipper: clipper,
-        alignment: Alignment.topRight,
-        margin: EdgeInsets.only(top: 20),
-        backGroundColor: Colors.lightGreen,
-        child: Container(
-          constraints: BoxConstraints(
-            maxWidth: MediaQuery.of(context).size.width * 0.7,
-          ),
-          child: Text(
-            chattingModel.text,
-            style: TextStyle(color: Colors.white),
-          ),
-        ),
-      );
 
-  getReceiverView(CustomClipper clipper, BuildContext context) => ChatBubble(
-        clipper: clipper,
-        backGroundColor: Colors.grey,
-        margin: EdgeInsets.only(top: 20),
-        child: Container(
-          constraints: BoxConstraints(
-            maxWidth: MediaQuery.of(context).size.width * 0.7,
-          ),
-          child: Text(
-            chattingModel.text,
-            style: TextStyle(color: Colors.black),
-          ),
-        ),
-      );
+  getSenderView(CustomClipper clipper, BuildContext context) => Padding(
+    padding: const EdgeInsets.all(8.0),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        Text(chattingModel.name),
+        ChatBubble(
+              clipper: clipper,
+              alignment: Alignment.topRight,
+              margin: EdgeInsets.only(top: 10),
+              backGroundColor: Colors.lightGreen,
+              child: Container(
+                constraints: BoxConstraints(
+                  maxWidth: MediaQuery.of(context).size.width * 0.7,
+                ),
+                child: Text(
+                  chattingModel.text,
+                  style: TextStyle(color: Colors.white),
+                ),
+              ),
+            ),
+      ],
+    ),
+  );
+
+  getReceiverView(CustomClipper clipper, BuildContext context) => Padding(
+    padding: const EdgeInsets.all(8.0),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(chattingModel.name),
+        ChatBubble(
+              clipper: clipper,
+              backGroundColor: Colors.grey,
+              margin: EdgeInsets.only(top: 10),
+              child: Container(
+                constraints: BoxConstraints(
+                  maxWidth: MediaQuery.of(context).size.width * 0.7,
+                ),
+                child: Text(
+                  chattingModel.text,
+                  style: TextStyle(color: Colors.black),
+                ),
+              ),
+            ),
+      ],
+    ),
+  );
 }
